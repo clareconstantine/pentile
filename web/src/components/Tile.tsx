@@ -1,5 +1,5 @@
 import type { Tile } from '@engine/types'
-import './Tile.css'
+import '../styles/Tile.css'
 
 interface TileProps {
   tile: Tile

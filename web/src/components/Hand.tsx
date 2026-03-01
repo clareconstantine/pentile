@@ -1,6 +1,6 @@
 import type { Tile } from '@engine/types'
 import TileComponent from './Tile'
-import './Hand.css'
+import '../styles/Hand.css'
 
 interface HandProps {
   tiles: Tile[]

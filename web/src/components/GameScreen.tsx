@@ -5,7 +5,7 @@ import { takeTurn, skipTurn } from '@engine/gameState'
 import { validatePartialMove } from '@engine/validation'
 import Board from './Board'
 import Hand from './Hand'
-import './GameScreen.css'
+import '../styles/GameScreen.css'
 
 export default function GameScreen() {
   const [gameState, setGameState] = useState<GameState>(() =>

@@ -1,7 +1,7 @@
 import type { Board as BoardType, PlacedTile, Position, Tile } from '@engine/types'
 import { BOARD_ROWS, BOARD_COLS, CENTER } from '@engine/types'
 import TileComponent from './Tile'
-import './Board.css'
+import '../styles/Board.css'
 
 interface BoardProps {
   board: BoardType
