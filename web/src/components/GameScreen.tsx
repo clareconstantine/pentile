@@ -48,35 +48,36 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
     if (!isAITurn || aiThinking) return
 
     setAiThinking(true)
-    setMessage(`${currentPlayer.name} is thinking...`)
 
     const timer = setTimeout(() => {
-      const difficulty = currentConfig.difficulty ?? 'medium'
-      const move = findBestMove(gameState, difficulty)
+      try {
+        const difficulty = currentConfig.difficulty ?? 'medium'
+        const move = findBestMove(gameState, difficulty)
 
-      if (!move) {
-        const result = skipTurn(gameState)
-        if (result.success) {
-          setGameState(result.state)
-          setMessage(`${currentPlayer.name} had no valid move and skipped.`)
+        if (!move) {
+          const result = skipTurn(gameState)
+          if (result.success) setGameState(result.state)
+        } else {
+          const result = takeTurn(gameState, move.placed)
+          if (result.success) {
+            setGameState(result.state)
+            setMessage(
+              result.state.phase === 'finished'
+                ? 'Game over!'
+                : `${currentPlayer.name} scored +${result.scoreEarned}!`
+            )
+          }
         }
-      } else {
-        const result = takeTurn(gameState, move.placed)
-        if (result.success) {
-          setGameState(result.state)
-          setMessage(
-            result.state.phase === 'finished'
-              ? 'Game over!'
-              : `${currentPlayer.name} scored +${result.scoreEarned}!`
-          )
-        }
+      } catch (err) {
+        console.error('AI error:', err)
+      } finally {
+        setAiThinking(false)
       }
-
-      setAiThinking(false)
     }, AI_THINKING_DELAY_MS)
 
     return () => clearTimeout(timer)
-  }, [isAITurn, gameState, aiThinking, currentPlayer, currentConfig])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAITurn, aiThinking])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
