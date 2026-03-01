@@ -19,7 +19,7 @@ interface GameScreenProps {
   onReturnToMenu: () => void
 }
 
-const AI_THINKING_DELAY_MS = 750
+const AI_THINKING_DELAY_MS = 1200
 
 export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
