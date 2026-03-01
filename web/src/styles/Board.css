@@ -32,11 +32,15 @@
 
 .cell--clickable {
   cursor: crosshair;
-  background: color-mix(in srgb, var(--teal) 15%, var(--navy-mid));
+  background: color-mix(in srgb, var(--teal) 30%, var(--navy-mid));
 }
 
 .cell--clickable:hover {
-  background: color-mix(in srgb, var(--teal) 30%, var(--navy-mid));
+  background: color-mix(in srgb, var(--teal) 45%, var(--navy-mid));
+}
+
+.cell--valid {
+  background: color-mix(in srgb, var(--teal) 20%, var(--navy-mid));
 }
 
 .cell--staged {

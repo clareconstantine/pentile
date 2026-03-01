@@ -3,6 +3,8 @@ import {
   BoardCell,
   BOARD_ROWS,
   BOARD_COLS,
+  CENTER,
+  PlacedTile,
   Position,
   Segment,
   Tile,
@@ -114,4 +116,91 @@ export function getAffectedSegments(board: Board, positions: Position[]): Segmen
   }
 
   return segments;
+}
+
+export function getValidPlacementCells(
+  board: Board,
+  stagedMoves: PlacedTile[],
+  isFirstMove: boolean
+): Set<string> {
+  const valid = new Set<string>()
+
+  // Build a combined occupied map (board + staged)
+  const isOccupied = (pos: Position): boolean =>
+    !isEmpty(board, pos) ||
+    stagedMoves.some(m => m.position.row === pos.row && m.position.col === pos.col)
+
+  // Helper: would placing at pos create a segment of 6+ in a given direction?
+  const wouldExceedMax = (pos: Position): boolean => {
+    let hCount = 1
+    for (let c = pos.col - 1; c >= 0 && isOccupied({ row: pos.row, col: c }); c--) hCount++
+    for (let c = pos.col + 1; c < BOARD_COLS && isOccupied({ row: pos.row, col: c }); c++) hCount++
+
+    let vCount = 1
+    for (let r = pos.row - 1; r >= 0 && isOccupied({ row: r, col: pos.col }); r--) vCount++
+    for (let r = pos.row + 1; r < BOARD_ROWS && isOccupied({ row: r, col: pos.col }); r++) vCount++
+
+    return hCount > 5 || vCount > 5
+  }
+
+  // Determine committed direction from staged moves
+  type Direction = 'horizontal' | 'vertical' | 'none'
+  let committedDirection: Direction = 'none'
+  if (stagedMoves.length >= 2) {
+    const allSameRow = stagedMoves.every(m => m.position.row === stagedMoves[0].position.row)
+    committedDirection = allSameRow ? 'horizontal' : 'vertical'
+  } else if (stagedMoves.length === 1) {
+    // One tile staged — both directions still open, but we can infer from
+    // existing board tiles in the same row/col
+    committedDirection = 'none'
+  }
+
+  // On first move with nothing staged, only highlight center
+  if (isFirstMove && stagedMoves.length === 0) {
+    valid.add(`${CENTER.row},${CENTER.col}`)
+    return valid
+  }
+
+  for (let r = 0; r < BOARD_ROWS; r++) {
+    for (let c = 0; c < BOARD_COLS; c++) {
+      const pos: Position = { row: r, col: c }
+      if (isOccupied(pos)) continue
+      if (wouldExceedMax(pos)) continue
+
+      // Must be adjacent to an occupied cell
+      const adjacent = [
+        { row: r - 1, col: c },
+        { row: r + 1, col: c },
+        { row: r, col: c - 1 },
+        { row: r, col: c + 1 },
+      ].some(n => isInBounds(n) && isOccupied(n))
+      if (!adjacent) continue
+
+      // If direction is committed, only allow cells in that row/col
+      if (committedDirection === 'horizontal') {
+        if (r !== stagedMoves[0].position.row) continue
+        // No empty gaps between this cell and the staged cluster
+        const stagedCols = stagedMoves.map(m => m.position.col)
+        const allCols = [...stagedCols, c].sort((a, b) => a - b)
+        const minCol = allCols[0]
+        const maxCol = allCols[allCols.length - 1]
+        const hasGap = Array.from({ length: maxCol - minCol + 1 }, (_, i) => minCol + i)
+          .some(col => col !== c && !isOccupied({ row: r, col }))
+        if (hasGap) continue
+      } else if (committedDirection === 'vertical') {
+        if (c !== stagedMoves[0].position.col) continue
+        const stagedRows = stagedMoves.map(m => m.position.row)
+        const allRows = [...stagedRows, r].sort((a, b) => a - b)
+        const minRow = allRows[0]
+        const maxRow = allRows[allRows.length - 1]
+        const hasGap = Array.from({ length: maxRow - minRow + 1 }, (_, i) => minRow + i)
+          .some(row => row !== r && !isOccupied({ row, col: c }))
+        if (hasGap) continue
+      }
+
+      valid.add(`${r},${c}`)
+    }
+  }
+
+  return valid
 }

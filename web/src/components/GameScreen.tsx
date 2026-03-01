@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import type { GameState, Tile, PlacedTile, Position } from '@engine/types'
 import { createGame, takeTurn, skipTurn } from '@engine/gameState'
 import { validatePartialMove, validateMove } from '@engine/validation'
+import { getValidPlacementCells } from '@engine/board'
 import { findBestMove } from '@engine/ai'
 import type { AIDifficulty } from '@engine/ai'
 import Board from './Board'
@@ -46,6 +47,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const movePreview = stagedMoves.length > 0
     ? validateMove(gameState.board, stagedMoves, gameState.turnNumber === 0)
     : null
+  const validCells = gameState.phase === 'playing' && !isAITurn
+    ? getValidPlacementCells(gameState.board, stagedMoves, gameState.turnNumber === 0)
+    : new Set<string>()
 
   // ── AI turn handler ──────────────────────────────────────────────────────
 
@@ -195,6 +199,7 @@ useEffect(() => {
           board={gameState.board}
           stagedMoves={stagedMoves}
           selectedTile={selectedTile}
+          validCells={validCells}
           onCellClick={handleCellClick}
           onStagedClick={handleUnstage}
         />

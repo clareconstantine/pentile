@@ -7,6 +7,7 @@ interface BoardProps {
   board: BoardType
   stagedMoves: PlacedTile[]
   selectedTile: Tile | null
+  validCells: Set<string>
   onCellClick: (pos: Position) => void
   onStagedClick: (pos: Position) => void
 }
@@ -15,6 +16,7 @@ export default function Board({
   board,
   stagedMoves,
   selectedTile,
+  validCells,
   onCellClick,
   onStagedClick,
 }: BoardProps) {
@@ -38,14 +40,16 @@ export default function Board({
             const placedTile = board[row][col]
             const stagedTile = stagedMap.get(key)
             const isCenter = row === CENTER.row && col === CENTER.col
-            const isClickable = !placedTile && !!selectedTile
+            const isValid = validCells?.has(key) ?? false
+            const isClickable = isValid && !!selectedTile
 
             return (
               <div
                 key={key}
                 className={[
                   'cell',
-                  isCenter ? 'cell--center' : '',
+                  isCenter && !stagedTile && !placedTile ? 'cell--center' : '',
+                  isValid && !selectedTile ? 'cell--valid' : '',
                   isClickable ? 'cell--clickable' : '',
                   stagedTile ? 'cell--staged' : '',
                 ].join(' ')}
