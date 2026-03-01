@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { GameState, Tile, PlacedTile, Position } from '@engine/types'
 import { createGame, takeTurn, skipTurn } from '@engine/gameState'
 import { validatePartialMove } from '@engine/validation'
@@ -33,8 +33,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [stagedMoves, setStagedMoves] = useState<PlacedTile[]>([])
   const [message, setMessage] = useState<string>('')
-  const [aiThinking, setAiThinking] = useState(false)
   const [confirmingQuit, setConfirmingQuit] = useState(false)
+
+  const aiThinking = useRef(false)
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
@@ -45,40 +46,43 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
 
   // ── AI turn handler ──────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (!isAITurn || aiThinking) return
+useEffect(() => {
+  if (!isAITurn || aiThinking.current) return
 
-    setAiThinking(true)
+  aiThinking.current = true
 
-    const timer = setTimeout(() => {
-      try {
-        const difficulty = currentConfig.difficulty ?? 'medium'
-        const move = findBestMove(gameState, difficulty)
+  const timer = setTimeout(() => {
+    try {
+      const difficulty = currentConfig.difficulty ?? 'medium'
+      const move = findBestMove(gameState, difficulty)
 
-        if (!move) {
-          const result = skipTurn(gameState)
-          if (result.success) setGameState(result.state)
-        } else {
-          const result = takeTurn(gameState, move.placed)
-          if (result.success) {
-            setGameState(result.state)
-            setMessage(
-              result.state.phase === 'finished'
-                ? 'Game over!'
-                : `${currentPlayer.name} scored +${result.scoreEarned}!`
-            )
-          }
+      if (!move) {
+        const result = skipTurn(gameState)
+        if (result.success) setGameState(result.state)
+      } else {
+        const result = takeTurn(gameState, move.placed)
+        if (result.success) {
+          setGameState(result.state)
+          setMessage(
+            result.state.phase === 'finished'
+              ? 'Game over!'
+              : `${currentPlayer.name} scored +${result.scoreEarned}!`
+          )
         }
-      } catch (err) {
-        console.error('AI error:', err)
-      } finally {
-        setAiThinking(false)
       }
-    }, AI_THINKING_DELAY_MS)
+    } catch (err) {
+      console.error('AI error:', err)
+    } finally {
+      aiThinking.current = false
+    }
+  }, AI_THINKING_DELAY_MS)
 
-    return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAITurn, aiThinking])
+  return () => {
+    clearTimeout(timer)
+    aiThinking.current = false
+  }
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isAITurn])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
