@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import type { GameState, Tile, PlacedTile, Position } from '@engine/types'
 import { createGame, takeTurn, skipTurn } from '@engine/gameState'
-import { validatePartialMove } from '@engine/validation'
+import { validatePartialMove, validateMove } from '@engine/validation'
 import { findBestMove } from '@engine/ai'
 import type { AIDifficulty } from '@engine/ai'
 import Board from './Board'
@@ -43,6 +43,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
+  const movePreview = stagedMoves.length > 0
+    ? validateMove(gameState.board, stagedMoves, gameState.turnNumber === 0)
+    : null
 
   // ── AI turn handler ──────────────────────────────────────────────────────
 
@@ -253,10 +256,15 @@ useEffect(() => {
                   <button
                     className="btn btn-primary"
                     onClick={handleConfirm}
-                    disabled={stagedMoves.length === 0}
+                    disabled={!movePreview?.valid}
                   >
                     Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
                   </button>
+                  {movePreview && (
+                    <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
+                      {movePreview.valid ? `+${movePreview.score} pts` : movePreview.reason}
+                    </span>
+                  )}
                 </div>
               </>
             )}

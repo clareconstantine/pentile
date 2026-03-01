@@ -239,3 +239,17 @@
 .tiles-remaining--low {
   color: var(--gold);
 }
+
+.move-preview {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  align-self: center;
+}
+
+.move-preview--valid {
+  color: var(--teal-light);
+}
+
+.move-preview--invalid {
+  color: var(--text-dim);
+}
