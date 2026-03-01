@@ -34,6 +34,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const [stagedMoves, setStagedMoves] = useState<PlacedTile[]>([])
   const [message, setMessage] = useState<string>('')
   const [aiThinking, setAiThinking] = useState(false)
+  const [confirmingQuit, setConfirmingQuit] = useState(false)
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
@@ -168,7 +169,18 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
             </div>
           ))}
         </div>
-        <button className="btn btn-ghost" onClick={onReturnToMenu}>Menu</button>
+        <span className={`tiles-remaining ${gameState.tileBag.length <= 10 ? 'tiles-remaining--low' : ''}`}>
+          {gameState.tileBag.length} tiles left
+        </span>
+        {confirmingQuit ? (
+          <div className="quit-confirm">
+            <span className="quit-confirm-label">Quit game?</span>
+            <button className="btn btn-danger" onClick={onReturnToMenu}>Quit</button>
+            <button className="btn btn-ghost" onClick={() => setConfirmingQuit(false)}>Cancel</button>
+          </div>
+        ) : (
+          <button className="btn btn-ghost" onClick={() => setConfirmingQuit(true)}>Menu</button>
+        )}
       </header>
 
       <main className="game-main">

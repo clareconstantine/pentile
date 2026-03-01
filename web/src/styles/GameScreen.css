@@ -210,3 +210,32 @@
 .game-over-actions {
   margin-top: 4px;
 }
+
+.quit-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quit-confirm-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.btn-danger {
+  background: var(--red);
+  color: var(--cream);
+}
+
+.tiles-remaining {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.tiles-remaining--low {
+  color: var(--gold);
+}
