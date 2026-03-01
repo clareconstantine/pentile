@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --navy:        #0f1923;
+  --navy-mid:    #1a2535;
+  --navy-light:  #243044;
+  --cream:       #f2e8d5;
+  --cream-dark:  #d9cbb4;
+  --gold:        #c8922a;
+  --gold-light:  #e8b84b;
+  --teal:        #2a9d8f;
+  --teal-light:  #3bbfaf;
+  --red:         #e63946;
+  --text-dim:    #8899aa;
+
+  --cell-size: 42px;
+  --tile-size: 36px;
+  --radius: 4px;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--navy);
+  color: var(--cream);
+  font-family: 'DM Mono', monospace;
+  -webkit-font-smoothing: antialiased;
+}

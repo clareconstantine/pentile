@@ -1,0 +1,52 @@
+.board-wrapper {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.board {
+  display: grid;
+  gap: 2px;
+  background: var(--navy-light);
+  border: 2px solid var(--navy-light);
+  border-radius: var(--radius);
+  padding: 2px;
+  width: fit-content;
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: var(--navy-mid);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.12s;
+}
+
+.cell--center {
+  background: var(--navy);
+}
+
+.cell--clickable {
+  cursor: crosshair;
+  background: color-mix(in srgb, var(--teal) 15%, var(--navy-mid));
+}
+
+.cell--clickable:hover {
+  background: color-mix(in srgb, var(--teal) 30%, var(--navy-mid));
+}
+
+.cell--staged {
+  cursor: pointer;
+}
+
+.center-marker {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.6;
+}

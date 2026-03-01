@@ -93,6 +93,73 @@ export function validateMove(
   return { valid: true, score, segments: affectedSegments };
 }
 
+/**
+ * Lightweight check for mid-turn tile placement.
+ * Only validates structure (single line, no gaps, center rule) —
+ * does NOT check multiples of 5 or connectivity to existing tiles.
+ * Those are only checked on Confirm.
+ */
+export function validatePartialMove(
+  board: Board,
+  placed: PlacedTile[],
+  isFirstMove: boolean
+): { valid: true } | { valid: false; reason: string } {
+  if (placed.length === 0) return { valid: true }
+
+  if (placed.length > MAX_SEGMENT_LENGTH) {
+    return { valid: false, reason: `You may place at most ${MAX_SEGMENT_LENGTH} tiles per turn.` }
+  }
+
+  for (const { position: pos } of placed) {
+    if (!isInBounds(pos)) {
+      return { valid: false, reason: 'A tile is placed outside the board.' }
+    }
+    if (!isEmpty(board, pos)) {
+      return { valid: false, reason: `Cell (${pos.row}, ${pos.col}) is already occupied.` }
+    }
+  }
+
+  const posKeys = placed.map(({ position: p }) => `${p.row},${p.col}`)
+  if (new Set(posKeys).size !== posKeys.length) {
+    return { valid: false, reason: 'Two tiles cannot share the same cell.' }
+  }
+
+  if (placed.length > 1) {
+    const rows = placed.map(p => p.position.row)
+    const cols = placed.map(p => p.position.col)
+    const allSameRow = rows.every(r => r === rows[0])
+    const allSameCol = cols.every(c => c === cols[0])
+
+    if (!allSameRow && !allSameCol) {
+      return { valid: false, reason: 'All tiles must be in the same row or column.' }
+    }
+
+    const gapCheck = checkNoGaps(board, placed, allSameRow)
+    if (!gapCheck.ok) return { valid: false, reason: gapCheck.reason }
+  }
+
+  if (placed.length >= 1) {
+    const boardAfter = applyMove(board, placed)
+    const affectedSegments = getAffectedSegments(boardAfter, placed.map(p => p.position))
+    for (const seg of affectedSegments) {
+      if (seg.tiles.length > MAX_SEGMENT_LENGTH) {
+        return { valid: false, reason: `A segment would exceed ${MAX_SEGMENT_LENGTH} tiles.` }
+      }
+    }
+  }
+
+  if (isFirstMove) {
+    const coversCenter = placed.some(
+      ({ position: p }) => p.row === CENTER.row && p.col === CENTER.col
+    )
+    if (!coversCenter) {
+      return { valid: false, reason: 'The first move must include the center square.' }
+    }
+  }
+
+  return { valid: true }
+}
+
 function applyMove(board: Board, placed: PlacedTile[]): Board {
   let next = board;
   for (const { tile, position } of placed) {

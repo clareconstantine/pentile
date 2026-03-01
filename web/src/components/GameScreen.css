@@ -1,0 +1,161 @@
+.game-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--navy);
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--navy-mid);
+  border-bottom: 1px solid var(--navy-light);
+  flex-shrink: 0;
+}
+
+.game-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+}
+
+.scores {
+  display: flex;
+  gap: 16px;
+}
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--navy-light);
+  background: var(--navy);
+  transition: border-color 0.2s, background 0.2s;
+  min-width: 80px;
+}
+
+.score-card.active {
+  border-color: var(--gold);
+  background: var(--navy-mid);
+}
+
+.player-name {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.player-score {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--cream);
+  line-height: 1.2;
+}
+
+.score-card.active .player-score {
+  color: var(--gold-light);
+}
+
+.game-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 16px;
+}
+
+.game-footer {
+  flex-shrink: 0;
+  background: var(--navy-mid);
+  border-top: 1px solid var(--navy-light);
+  padding: 12px 24px;
+}
+
+.turn-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+  min-height: 20px;
+}
+
+.turn-player {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.turn-message {
+  font-size: 0.75rem;
+  color: var(--teal-light);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:not(:disabled):hover { opacity: 0.85; }
+.btn:not(:disabled):active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--gold);
+  color: var(--navy);
+  font-weight: 500;
+}
+
+.btn-secondary {
+  background: var(--navy-light);
+  color: var(--cream);
+}
+
+.game-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.game-over-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.game-over-winner {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+}
