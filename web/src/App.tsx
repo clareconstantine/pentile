@@ -1,6 +1,33 @@
+import { useState } from 'react'
 import './index.css'
+import SetupScreen from './components/SetupScreen'
 import GameScreen from './components/GameScreen'
+import type { PlayerConfig } from './components/GameScreen'
+
+type Screen = 'setup' | 'game'
 
 export default function App() {
-  return <GameScreen />
+  const [screen, setScreen] = useState<Screen>('setup')
+  const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([])
+
+  const handleStart = (configs: PlayerConfig[]) => {
+    setPlayerConfigs(configs)
+    setScreen('game')
+  }
+
+  const handleReturnToMenu = () => {
+    setScreen('setup')
+  }
+
+  if (screen === 'game' && playerConfigs.length > 0) {
+    return (
+      <GameScreen
+        key={playerConfigs.map(p => p.name).join(',')}
+        playerConfigs={playerConfigs}
+        onReturnToMenu={handleReturnToMenu}
+      />
+    )
+  }
+
+  return <SetupScreen onStart={handleStart} />
 }
