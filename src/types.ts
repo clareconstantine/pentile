@@ -51,6 +51,7 @@ export interface GameState {
   tileBag: Tile[];
   phase: GamePhase;
   turnNumber: number;
+  consecutiveSkips: number; // resets to 0 on any successful placement
 }
 
 // ─── Move Validation ──────────────────────────────────────────────────────────
