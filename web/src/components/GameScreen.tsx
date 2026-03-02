@@ -100,7 +100,7 @@ useEffect(() => {
     aiThinking.current = false
   }
 // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [isAITurn])
+}, [isAITurn, gameState.currentPlayerIndex])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 

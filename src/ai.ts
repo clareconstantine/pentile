@@ -190,9 +190,20 @@ function findLineMovesForHand(
 ): AIMove[] {
   const moves: AIMove[] = [];
 
-  // Find empty cells in this line that are candidates
+  // Find empty cells in this line that are close enough to an occupied cell
+  // to be part of a valid run (max run length is 5, so at most 4 away)
   const emptyCells: Position[] = [];
   const length = line.direction === "horizontal" ? BOARD_COLS : BOARD_ROWS;
+  const MAX_REACH = 4;
+
+  const occupiedIndices = new Set<number>();
+  for (let i = 0; i < length; i++) {
+    const pos: Position =
+      line.direction === "horizontal"
+        ? { row: line.index, col: i }
+        : { row: i, col: line.index };
+    if (isInBounds(pos) && !isEmpty(board, pos)) occupiedIndices.add(i);
+  }
 
   for (let i = 0; i < length; i++) {
     const pos: Position =
@@ -200,9 +211,11 @@ function findLineMovesForHand(
         ? { row: line.index, col: i }
         : { row: i, col: line.index };
 
-    if (isInBounds(pos) && isEmpty(board, pos)) {
-      emptyCells.push(pos);
-    }
+    if (!isInBounds(pos) || !isEmpty(board, pos)) continue;
+
+    const nearOccupied = isFirstMove ||
+      [...occupiedIndices].some(occ => Math.abs(i - occ) <= MAX_REACH);
+    if (nearOccupied) emptyCells.push(pos);
   }
 
   // Try all combinations of 2–5 tiles from hand placed into empty cells in this line
