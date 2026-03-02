@@ -78,17 +78,20 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
 
         <View style={styles.players}>
           {slots.map((slot, i) => (
-            <View key={i} style={[styles.slot, !slot.active && styles.slotInactive]}>
-              <View style={styles.slotHeader}>
-                <Text style={styles.slotNumber}>P{i + 1}</Text>
-                {i >= 2 && (
-                  <Pressable onPress={() => toggleSlot(i)} style={styles.slotToggle}>
-                    <Text style={styles.slotToggleText}>{slot.active ? '−' : '+'}</Text>
-                  </Pressable>
-                )}
-              </View>
-
-              {slot.active && (
+            i >= 2 && !slot.active ? (
+              <Pressable key={i} onPress={() => toggleSlot(i)} style={styles.addPlayerBtn}>
+                <Text style={styles.addPlayerBtnText}>+ Add Player {i + 1}</Text>
+              </Pressable>
+            ) : (
+              <View key={i} style={styles.slot}>
+                <View style={styles.slotHeader}>
+                  <Text style={styles.slotNumber}>P{i + 1}</Text>
+                  {i >= 2 && (
+                    <Pressable onPress={() => toggleSlot(i)} style={styles.slotToggle}>
+                      <Text style={styles.slotToggleText}>−</Text>
+                    </Pressable>
+                  )}
+                </View>
                 <View style={styles.slotBody}>
                   <TextInput
                     style={styles.nameInput}
@@ -111,14 +114,8 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
                     ))}
                   </View>
                 </View>
-              )}
-
-              {!slot.active && (
-                <Pressable onPress={() => toggleSlot(i)} style={styles.addPlayer}>
-                  <Text style={styles.addPlayerText}>+ Add Player</Text>
-                </Pressable>
-              )}
-            </View>
+              </View>
+            )
           ))}
         </View>
 
@@ -184,8 +181,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
   },
-  slotInactive: {
-    opacity: 0.5,
+  addPlayerBtn: {
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    width: '100%',
+  },
+  addPlayerBtnText: {
+    color: colors.creamDark,
+    fontSize: 12,
+    letterSpacing: 1,
   },
   slotHeader: {
     flexDirection: 'row',
@@ -246,14 +254,6 @@ const styles = StyleSheet.create({
   typeBtnTextSelected: {
     color: colors.cream,
     fontWeight: 'bold',
-  },
-  addPlayer: {
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  addPlayerText: {
-    color: colors.teal,
-    fontSize: 14,
   },
   startBtn: {
     backgroundColor: colors.gold,

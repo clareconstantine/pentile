@@ -53,15 +53,6 @@
   transition: border-color 0.2s;
 }
 
-.player-slot.active {
-  border-color: var(--navy-light);
-}
-
-.player-slot.inactive {
-  border-color: transparent;
-  background: var(--navy);
-  opacity: 0.5;
-}
 
 .slot-header {
   display: flex;
@@ -155,19 +146,24 @@
   color: var(--navy);
 }
 
-.slot-empty {
-  padding: 12px 14px;
-  font-size: 0.7rem;
+.add-player-btn {
+  background: none;
+  border: 1px dashed var(--navy-light);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  padding: 8px 14px;
   cursor: pointer;
-  text-align: center;
-  transition: color 0.15s;
+  transition: color 0.15s, border-color 0.15s;
+  width: 100%;
 }
 
-.slot-empty:hover {
+.add-player-btn:hover {
   color: var(--cream);
+  border-color: var(--cream-dark);
 }
 
 .start-btn {

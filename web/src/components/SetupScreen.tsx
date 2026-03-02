@@ -94,23 +94,18 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
 
         <div className="setup-players">
           {slots.map((slot, i) => (
-            <div
-              key={i}
-              className={`player-slot ${slot.active ? 'active' : 'inactive'}`}
-            >
-              <div className="slot-header">
-                <span className="slot-number">P{i + 1}</span>
-                {i >= 2 && (
-                  <button
-                    className="slot-toggle"
-                    onClick={() => toggleSlot(i)}
-                  >
-                    {slot.active ? '−' : '+'}
-                  </button>
-                )}
-              </div>
-
-              {slot.active && (
+            i >= 2 && !slot.active ? (
+              <button key={i} className="add-player-btn" onClick={() => toggleSlot(i)}>
+                + Add Player {i + 1}
+              </button>
+            ) : (
+              <div key={i} className="player-slot">
+                <div className="slot-header">
+                  <span className="slot-number">P{i + 1}</span>
+                  {i >= 2 && (
+                    <button className="slot-toggle" onClick={() => toggleSlot(i)}>−</button>
+                  )}
+                </div>
                 <div className="slot-body">
                   <input
                     className="slot-name"
@@ -130,14 +125,8 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
                     ))}
                   </div>
                 </div>
-              )}
-
-              {!slot.active && (
-                <div className="slot-empty" onClick={() => toggleSlot(i)}>
-                  + Add Player
-                </div>
-              )}
-            </div>
+              </div>
+            )
           ))}
         </div>
 
