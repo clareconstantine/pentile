@@ -1,20 +1,41 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react'
+import { StatusBar } from 'expo-status-bar'
+import SetupScreen from './components/SetupScreen'
+import GameScreen from './components/GameScreen'
+import type { PlayerConfig } from './components/GameScreen'
+
+type Screen = 'setup' | 'game'
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [screen, setScreen] = useState<Screen>('setup')
+  const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([])
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  const handleStart = (configs: PlayerConfig[]) => {
+    setPlayerConfigs(configs)
+    setScreen('game')
+  }
+
+  const handleReturnToMenu = () => {
+    setScreen('setup')
+  }
+
+  if (screen === 'game' && playerConfigs.length > 0) {
+    return (
+      <>
+        <StatusBar style="light" />
+        <GameScreen
+          key={playerConfigs.map(p => p.name).join(',')}
+          playerConfigs={playerConfigs}
+          onReturnToMenu={handleReturnToMenu}
+        />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <StatusBar style="light" />
+      <SetupScreen onStart={handleStart} />
+    </>
+  )
+}

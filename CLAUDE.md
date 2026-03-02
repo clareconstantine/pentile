@@ -43,7 +43,7 @@ Components just render `GameState` and call `takeTurn()` / `skipTurn()`. All log
 pentile/
 ├── src/                    # Game engine — shared everywhere
 │   ├── types.ts            # All types and constants
-│   ├── board.ts            # Board ops + segment extraction
+│   ├── board.ts            # Board ops, segment extraction, getValidPlacementCells()
 │   ├── validation.ts       # validateMove(), validatePartialMove()
 │   ├── gameState.ts        # createGame(), takeTurn(), skipTurn(), getWinner()
 │   └── ai.ts               # findBestMove() — easy + medium difficulty
@@ -74,6 +74,7 @@ pentile/
 - `--teal` / `--teal-light` — staged tiles, AI badge, clickable cells
 - `--cell-size: 42px`, `--tile-size: 36px`
 - Fonts: Bebas Neue (display/titles), DM Mono (UI/body)
+- Cell highlight hierarchy: `.cell--valid` (20% teal) → `.cell--clickable` (30% teal) → `.cell--clickable:hover` (45% teal)
 
 ---
 
@@ -82,11 +83,17 @@ The web app is **fully working**: setup screen, game loop, human turns, AI turns
 
 The `@engine/` path alias points to `src/` — imported as `@engine/types`, `@engine/gameState`, etc.
 
+### Key implementation details:
+- **AI turn handler** uses a `useRef` flag (`aiThinking`) instead of `useState` to avoid re-render loops. Effect depends only on `[isAITurn]`. Delay is `AI_THINKING_DELAY_MS = 1200`.
+- **Move preview** — `validateMove` is called live in `GameScreen` on every staged move change. Score shown next to Confirm button; Confirm is disabled until move is fully valid.
+- **Valid placement highlighting** — `getValidPlacementCells()` in `board.ts` returns a `Set<string>` of `"row,col"` keys. Accounts for: adjacency to existing/staged tiles, 6-tile overflow prevention, committed direction (once 2+ tiles staged), first-move center-only rule. Passed to `Board` as `validCells` prop.
+- **Tiles remaining** — shown in header, turns gold when ≤ 10 tiles left.
+- **Quit confirmation** — Menu button toggles inline confirm UI (`confirmingQuit` state) before calling `onReturnToMenu`.
+
 ---
 
 ## To-Do (see notes.md for full list)
-- **In progress:** Menu button confirmation dialog — currently quits immediately, should confirm before calling `onReturnToMenu()`
-- Remaining tiles counter in the UI
 - Clearer active player indicator
+- AI move highlight animation (show what tiles the AI placed, animate score change)
 - AI hard mode (minimax or MCTS)
 - Eventually: Expo mobile port, then Rails multiplayer backend
