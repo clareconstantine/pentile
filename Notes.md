@@ -3,6 +3,7 @@
 ## In Progress
 
 ## UI / UX
+-  [ ] Quick game mode - smaller board and fewer tiles
 
 ## Infrastructure
 - [ ] Do we have enough tests? - maybe some jest tests?
