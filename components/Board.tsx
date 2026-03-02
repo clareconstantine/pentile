@@ -96,6 +96,8 @@ const styles = StyleSheet.create({
     gap: 1,
     padding: 4,
     backgroundColor: colors.navy,
+    borderWidth: 2,
+    borderColor: colors.navyLight,
   },
   row: {
     flexDirection: 'row',
