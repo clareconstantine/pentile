@@ -73,3 +73,9 @@ body {
   font-family: 'DM Mono', monospace;
   -webkit-font-smoothing: antialiased;
 }
+
+@media (min-width: 900px) {
+  html {
+    font-size: 18px;
+  }
+}
