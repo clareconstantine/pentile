@@ -8,10 +8,9 @@
 ## Infrastructure
 - [ ] Do we have enough tests? - maybe some jest tests?
 - [ ] Accessibility
-- [ ] Hosting the web app somewhere to get feedback
 - [ ] Rails multiplayer backend
-- [ ] Logging/monitoring - want to know about errors and which features are used most/least
 - [ ] Licensing - how do I protect my work?
+- [ ] Marketing - how will people find it? (especially if they search for quinto)
 - [ ] How/when to submit to the app store
 - [ ] Add a paywall after a certain number of games?
 
