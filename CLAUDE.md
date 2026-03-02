@@ -61,7 +61,17 @@ pentile/
 │   │   └── Tile.tsx        # Single tile (placed/staged/hand/selected states)
 │   └── styles/             # Per-component CSS files
 │
-├── app/                    # Expo React Native (future)
+├── App.tsx                 # Expo entry — SafeAreaProvider + screen routing
+├── app.json                # Expo config — orientation: landscape
+├── babel.config.js         # module-resolver for @engine alias (Metro)
+├── constants/
+│   └── design.ts           # Design tokens (colors, sizes) — RN equiv of CSS vars
+├── components/             # React Native components (mirror of web/src/components/)
+│   ├── Tile.tsx
+│   ├── Hand.tsx
+│   ├── Board.tsx           # Nested ScrollViews, cell highlights via backgroundColor
+│   ├── SetupScreen.tsx
+│   └── GameScreen.tsx      # Logic identical to web version
 ├── backend/                # Rails API (future — multiplayer)
 ├── notes.md                # Running to-do list (see below)
 └── README.md               # High-level overview for humans
@@ -81,7 +91,9 @@ pentile/
 ## Current State
 The web app is **fully working**: setup screen, game loop, human turns, AI turns (easy + medium), staged move preview, confirm/skip, scoring, end-of-game detection, win screen. Tests exist for the engine (`validation.test.ts`, `gameState.test.ts`, `ai.test.ts`).
 
-The `@engine/` path alias points to `src/` — imported as `@engine/types`, `@engine/gameState`, etc.
+The **Expo mobile app is also working** and tested on a real device via Expo Go (SDK 54). All 5 components are ported. Safe area insets handled via `react-native-safe-area-context`.
+
+The `@engine/` path alias points to `src/` — configured in both `babel.config.js` (Metro, runtime) and `tsconfig.json` (TypeScript, editor). Imported as `@engine/types`, `@engine/gameState`, etc.
 
 ### Key implementation details:
 - **AI turn handler** uses a `useRef` flag (`aiThinking`) instead of `useState` to avoid re-render loops. Effect depends only on `[isAITurn]`. Delay is `AI_THINKING_DELAY_MS = 1200`.
@@ -96,4 +108,4 @@ The `@engine/` path alias points to `src/` — imported as `@engine/types`, `@en
 - Clearer active player indicator
 - AI move highlight animation (show what tiles the AI placed, animate score change)
 - AI hard mode (minimax or MCTS)
-- Eventually: Expo mobile port, then Rails multiplayer backend
+- Eventually: Rails multiplayer backend
