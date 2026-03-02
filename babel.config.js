@@ -3,7 +3,7 @@ module.exports = function(api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      ['module-resolver', { alias: { '@engine': './src' } }]
+      ['module-resolver', { alias: { '@engine': './src', '@constants': './constants' } }]
     ],
   };
 };

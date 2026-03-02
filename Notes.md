@@ -3,8 +3,12 @@
 ## In Progress
 
 ## UI / UX
-- [ ] **Clearer active player indicator** — make it more obvious whose turn it is (beyond the score card highlight)
-- [ ] **Directions Page** Users should be able to learn how to play the game even if they have never played before.
+
+## Infrastructure
+- [ ] Do we have enough tests? - maybe some jest tests?
+- [ ] Accessibility
+- [ ] Hosting the web app somewhere to get feedback
+- [ ] Rails multiplayer backend
 
 ## AI
 - [ ] **Hard mode** — smarter AI difficulty beyond easy/medium (minimax or Monte Carlo tree search)

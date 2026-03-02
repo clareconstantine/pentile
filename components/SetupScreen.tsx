@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import type { PlayerConfig } from './GameScreen'
 import type { AIDifficulty } from '@engine/ai'
 import { colors } from '../constants/design'
+import { DIRECTIONS } from '@constants/directions'
 
 interface SetupScreenProps {
   onStart: (players: PlayerConfig[]) => void
@@ -23,8 +24,10 @@ const DEFAULTS: PlayerSlot[] = [
   { name: 'Player 4', type: 'human',  active: false },
 ]
 
+
 export default function SetupScreen({ onStart }: SetupScreenProps) {
   const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
+  const [showDirections, setShowDirections] = useState(false)
 
   const activePlayers = slots.filter(s => s.active)
 
@@ -51,6 +54,24 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Modal visible={showDirections} transparent animationType="fade" onRequestClose={() => setShowDirections(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setShowDirections(false)}>
+          <Pressable style={styles.directionsModal} onPress={() => {}}>
+            <Pressable style={styles.closeBtn} onPress={() => setShowDirections(false)}>
+              <Text style={styles.closeBtnText}>✕</Text>
+            </Pressable>
+            <Text style={styles.directionsTitle}>How to Play</Text>
+            <ScrollView>
+              {DIRECTIONS.map(({ heading, body }) => (
+                <View key={heading} style={styles.directionsSection}>
+                  <Text style={styles.directionsSectionHeading}>{heading}</Text>
+                  <Text style={styles.directionsSectionBody}>{body}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
       <View style={styles.card}>
         <Text style={styles.title}>PENTILE</Text>
         <Text style={styles.subtitle}>A game of fives</Text>
@@ -111,6 +132,9 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
           ]}
         >
           <Text style={styles.startBtnText}>Start Game</Text>
+        </Pressable>
+        <Pressable onPress={() => setShowDirections(true)} style={styles.howToPlayBtn}>
+          <Text style={styles.howToPlayText}>How to play?</Text>
         </Pressable>
       </View>
     </ScrollView>
@@ -249,5 +273,66 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 1,
+  },
+  howToPlayBtn: {
+    marginTop: 8,
+    padding: 4,
+  },
+  howToPlayText: {
+    color: colors.creamDark,
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  // Directions modal
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(13,27,42,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  directionsModal: {
+    backgroundColor: colors.navyMid,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    padding: 28,
+    width: '100%',
+    maxWidth: 480,
+    maxHeight: '85%',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 14,
+    padding: 6,
+    zIndex: 1,
+  },
+  closeBtnText: {
+    color: colors.creamDark,
+    fontSize: 14,
+  },
+  directionsTitle: {
+    color: colors.gold,
+    fontSize: 24,
+    fontWeight: 'bold',
+    letterSpacing: 3,
+    marginBottom: 20,
+  },
+  directionsSection: {
+    marginBottom: 18,
+  },
+  directionsSectionHeading: {
+    color: colors.tealLight,
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  directionsSectionBody: {
+    color: colors.cream,
+    fontSize: 14,
+    lineHeight: 21,
   },
 })

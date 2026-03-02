@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { PlayerConfig } from './GameScreen'
 import type { AIDifficulty } from '@engine/ai'
+import { DIRECTIONS } from '@constants/directions'
 import '../styles/SetupScreen.css'
 
 interface SetupScreenProps {
@@ -24,6 +25,7 @@ const DEFAULTS: PlayerSlot[] = [
 
 export default function SetupScreen({ onStart }: SetupScreenProps) {
   const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
+  const [showDirections, setShowDirections] = useState(false)
 
   const activePlayers = slots.filter(s => s.active)
 
@@ -50,6 +52,42 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
 
   return (
     <div className="setup-screen">
+      {showDirections && (
+        <div className="directions-backdrop" onClick={() => setShowDirections(false)}>
+          <div className="directions-modal" onClick={e => e.stopPropagation()}>
+            <button className="directions-close" onClick={() => setShowDirections(false)}>✕</button>
+            <h2 className="directions-title">How to Play</h2>
+
+            <div className="directions-sections">
+              <section className="directions-section">
+                <h3>The board</h3>
+                <p>13 × 17 grid. The first tile must cover the center square.</p>
+              </section>
+
+              <section className="directions-section">
+                <h3>Your turn</h3>
+                <p>Place 1–5 tiles in a straight line — all in the same row or all in the same column. At least one tile must touch a tile already on the board.</p>
+              </section>
+
+              <section className="directions-section">
+                <h3>The rule</h3>
+                <p>Every contiguous run of 2 or more tiles — horizontally and vertically — must sum to a multiple of 5. A run can never be longer than 5 tiles.</p>
+              </section>
+
+              <section className="directions-section">
+                <h3>Scoring</h3>
+                <p>Score the sum of every run your tiles touch, in both directions.</p>
+              </section>
+
+              <section className="directions-section">
+                <h3>End of game</h3>
+                <p>The game ends when all tiles have been played, or when no player can make a valid move. Subtract the sum of your remaining tiles from your score. Highest score wins.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="setup-card">
         <h1 className="setup-title">PENTILE</h1>
         <p className="setup-subtitle">A game of fives</p>
@@ -109,6 +147,9 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
           disabled={activePlayers.length < 1}
         >
           Start Game
+        </button>
+        <button className="how-to-play-btn" onClick={() => setShowDirections(true)}>
+          How to play?
         </button>
       </div>
     </div>

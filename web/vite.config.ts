@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@engine': path.resolve(__dirname, '../src'),
+      '@constants': path.resolve(__dirname, '../constants'),
     },
   },
 })

@@ -27,7 +27,8 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@engine/*": ["../src/*"]
+      "@engine/*": ["../src/*"],
+      "@constants/*": ["../constants/*"]
     }
   },
   "include": ["src"]
