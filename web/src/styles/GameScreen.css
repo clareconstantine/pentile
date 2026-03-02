@@ -43,23 +43,6 @@
   position: relative;
 }
 
-.score-card.active::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--gold);
-  animation: active-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes active-pulse {
-  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
-  50%       { opacity: 0.4; transform: translateX(-50%) scale(0.7); }
-}
 
 .score-card.active {
   border-color: var(--gold);
