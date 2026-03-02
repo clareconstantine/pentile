@@ -187,7 +187,12 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
                   : null,
               ]}
             >
-              <Text style={styles.playerName}>
+              <Text style={[
+                styles.playerName,
+                i === gameState.currentPlayerIndex && gameState.phase === 'playing'
+                  ? styles.playerNameActive
+                  : null,
+              ]}>
                 {p.name}
                 {playerConfigs[i].isAI && (
                   <Text style={styles.aiBadge}> {playerConfigs[i].difficulty ?? 'medium'}</Text>
@@ -352,11 +357,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.navyLight,
   },
   scoreCardActive: {
-    backgroundColor: colors.teal,
+    backgroundColor: 'rgba(201,168,76,0.18)',
+    borderWidth: 1,
+    borderColor: colors.gold,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+    transform: [{ scale: 1.08 }],
   },
   playerName: {
-    color: colors.cream,
+    color: colors.creamDark,
     fontSize: 13,
+  },
+  playerNameActive: {
+    color: colors.cream,
+    fontWeight: '600',
   },
   aiBadge: {
     color: colors.creamDark,

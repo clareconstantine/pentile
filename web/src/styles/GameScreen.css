@@ -27,6 +27,7 @@
 .scores {
   display: flex;
   gap: 16px;
+  align-items: center;
 }
 
 .score-card {
@@ -37,13 +38,38 @@
   border-radius: var(--radius);
   border: 1px solid var(--navy-light);
   background: var(--navy);
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
   min-width: 80px;
+  position: relative;
+}
+
+.score-card.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: active-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes active-pulse {
+  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+  50%       { opacity: 0.4; transform: translateX(-50%) scale(0.7); }
 }
 
 .score-card.active {
   border-color: var(--gold);
-  background: var(--navy-mid);
+  background: color-mix(in srgb, var(--gold) 12%, var(--navy));
+  box-shadow: 0 0 0 1px var(--gold), 0 4px 16px rgba(201,168,76,0.15);
+  transform: scale(1.08);
+}
+
+.score-card.active .player-name {
+  color: var(--cream);
 }
 
 .player-name {
