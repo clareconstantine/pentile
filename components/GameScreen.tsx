@@ -36,8 +36,11 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const [stagedMoves, setStagedMoves] = useState<PlacedTile[]>([])
   const [message, setMessage] = useState<string>('')
   const [confirmingQuit, setConfirmingQuit] = useState(false)
+  const [aiRecentMoves, setAiRecentMoves] = useState<Set<string>>(new Set())
+  const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
 
   const aiThinking = useRef(false)
+  const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
@@ -76,6 +79,14 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
                 ? 'Game over!'
                 : `${currentPlayer.name} scored +${result.scoreEarned}!`
             )
+            const positions = new Set(move.placed.map(p => `${p.position.row},${p.position.col}`))
+            setAiRecentMoves(positions)
+            setScoreFlash({ playerIndex: gameState.currentPlayerIndex, amount: result.scoreEarned })
+            if (aiHighlightTimer.current) clearTimeout(aiHighlightTimer.current)
+            aiHighlightTimer.current = setTimeout(() => {
+              setAiRecentMoves(new Set())
+              setScoreFlash(null)
+            }, 1500)
           }
         }
       } catch (err) {
@@ -182,7 +193,12 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
                   <Text style={styles.aiBadge}> {playerConfigs[i].difficulty ?? 'medium'}</Text>
                 )}
               </Text>
-              <Text style={styles.playerScore}>{p.score}</Text>
+              <View>
+                <Text style={styles.playerScore}>{p.score}</Text>
+                {scoreFlash?.playerIndex === i && (
+                  <Text style={styles.scoreDelta}>+{scoreFlash.amount}</Text>
+                )}
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -218,6 +234,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
           stagedMoves={stagedMoves}
           selectedTile={selectedTile}
           validCells={validCells}
+          recentMoves={aiRecentMoves}
           onCellClick={handleCellClick}
           onStagedClick={handleUnstage}
         />
@@ -349,6 +366,12 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  scoreDelta: {
+    color: colors.goldLight,
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
   },
   tilesRemaining: {
     color: colors.creamDark,

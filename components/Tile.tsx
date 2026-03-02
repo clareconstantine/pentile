@@ -4,7 +4,7 @@ import { colors, sizes } from '../constants/design'
 
 interface TileProps {
   tile: Tile
-  state: 'placed' | 'staged' | 'hand' | 'selected'
+  state: 'placed' | 'staged' | 'hand' | 'selected' | 'recent'
   onPress?: () => void
 }
 
@@ -15,6 +15,7 @@ export default function TileComponent({ tile, state, onPress }: TileProps) {
     state === 'staged'   && styles.staged,
     state === 'hand'     && styles.hand,
     state === 'selected' && styles.selected,
+    state === 'recent'   && styles.recent,
   ]
 
   if (onPress) {
@@ -55,6 +56,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     borderWidth: 2,
     borderColor: colors.goldLight,
+  },
+  recent: {
+    backgroundColor: colors.gold,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 4,
   },
   pressed: {
     opacity: 0.7,

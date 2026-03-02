@@ -58,6 +58,25 @@
   font-weight: 500;
   color: var(--cream);
   line-height: 1.2;
+  position: relative;
+}
+
+.score-delta {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  color: var(--gold-light);
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: float-up 1.5s ease-out forwards;
+}
+
+@keyframes float-up {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
 }
 
 .score-card.active .player-score {

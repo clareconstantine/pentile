@@ -3,7 +3,7 @@ import '../styles/Tile.css'
 
 interface TileProps {
   tile: Tile
-  state: 'placed' | 'staged' | 'hand' | 'selected'
+  state: 'placed' | 'staged' | 'hand' | 'selected' | 'recent'
   onClick?: () => void
 }
 

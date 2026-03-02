@@ -35,8 +35,11 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const [stagedMoves, setStagedMoves] = useState<PlacedTile[]>([])
   const [message, setMessage] = useState<string>('')
   const [confirmingQuit, setConfirmingQuit] = useState(false)
+  const [aiRecentMoves, setAiRecentMoves] = useState<Set<string>>(new Set())
+  const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
 
   const aiThinking = useRef(false)
+  const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
@@ -75,6 +78,14 @@ useEffect(() => {
               ? 'Game over!'
               : `${currentPlayer.name} scored +${result.scoreEarned}!`
           )
+          const positions = new Set(move.placed.map(p => `${p.position.row},${p.position.col}`))
+          setAiRecentMoves(positions)
+          setScoreFlash({ playerIndex: gameState.currentPlayerIndex, amount: result.scoreEarned })
+          if (aiHighlightTimer.current) clearTimeout(aiHighlightTimer.current)
+          aiHighlightTimer.current = setTimeout(() => {
+            setAiRecentMoves(new Set())
+            setScoreFlash(null)
+          }, 1500)
         }
       }
     } catch (err) {
@@ -176,7 +187,12 @@ useEffect(() => {
                   </span>
                 )}
               </span>
-              <span className="player-score">{p.score}</span>
+              <span className="player-score">
+                {p.score}
+                {scoreFlash?.playerIndex === i && (
+                  <span key={p.score} className="score-delta">+{scoreFlash.amount}</span>
+                )}
+              </span>
             </div>
           ))}
         </div>
@@ -200,6 +216,7 @@ useEffect(() => {
           stagedMoves={stagedMoves}
           selectedTile={selectedTile}
           validCells={validCells}
+          recentMoves={aiRecentMoves}
           onCellClick={handleCellClick}
           onStagedClick={handleUnstage}
         />

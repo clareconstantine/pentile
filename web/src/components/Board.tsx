@@ -8,6 +8,7 @@ interface BoardProps {
   stagedMoves: PlacedTile[]
   selectedTile: Tile | null
   validCells: Set<string>
+  recentMoves?: Set<string>
   onCellClick: (pos: Position) => void
   onStagedClick: (pos: Position) => void
 }
@@ -17,6 +18,7 @@ export default function Board({
   stagedMoves,
   selectedTile,
   validCells,
+  recentMoves,
   onCellClick,
   onStagedClick,
 }: BoardProps) {
@@ -62,7 +64,7 @@ export default function Board({
                 }}
               >
                 {placedTile && (
-                  <TileComponent tile={placedTile} state="placed" />
+                  <TileComponent tile={placedTile} state={recentMoves?.has(key) ? 'recent' : 'placed'} />
                 )}
                 {!placedTile && stagedTile && (
                   <TileComponent tile={stagedTile} state="staged" />
