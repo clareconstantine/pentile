@@ -1,4 +1,4 @@
-import { Board, GameState, PlacedTile, Position, Tile } from "./types";
+import type { Board, GameState, PlacedTile, Position, Tile } from "./types";
 import { BOARD_ROWS, BOARD_COLS } from "./types";
 import { isEmpty, isInBounds } from "./board";
 import { validateMove } from "./validation";
@@ -148,7 +148,7 @@ interface Line {
 }
 
 function getCandidateLines(
-  board: Board,
+  _board: Board,
   candidates: Position[],
   isFirstMove: boolean
 ): Line[] {

@@ -1,10 +1,10 @@
 import {
-  Board,
+  type Board,
   CENTER,
   MAX_SEGMENT_LENGTH,
-  MoveValidationResult,
-  PlacedTile,
-  Position,
+  type MoveValidationResult,
+  type PlacedTile,
+  type Position,
 } from "./types";
 import { getAffectedSegments, isEmpty, isInBounds, placeOnBoard } from "./board";
 

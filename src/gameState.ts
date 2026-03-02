@@ -1,11 +1,10 @@
 import {
-  GamePhase,
-  GameState,
+  type GameState,
   HAND_SIZE,
-  Player,
-  PlacedTile,
-  Tile,
-  TileValue,
+  type Player,
+  type PlacedTile,
+  type Tile,
+  type TileValue,
 } from "./types";
 import { createEmptyBoard, placeOnBoard } from "./board";
 import { validateMove } from "./validation";

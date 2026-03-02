@@ -96,16 +96,17 @@ The **Expo mobile app is also working** and tested on a real device via Expo Go 
 The `@engine/` path alias points to `src/` — configured in both `babel.config.js` (Metro, runtime) and `tsconfig.json` (TypeScript, editor). Imported as `@engine/types`, `@engine/gameState`, etc.
 
 ### Key implementation details:
-- **AI turn handler** uses a `useRef` flag (`aiThinking`) instead of `useState` to avoid re-render loops. Effect depends only on `[isAITurn]`. Delay is `AI_THINKING_DELAY_MS = 1200`.
+- **AI turn handler** uses a `useRef` flag (`aiThinking`) instead of `useState` to avoid re-render loops. Effect depends on `[isAITurn, gameState.currentPlayerIndex]` — the `currentPlayerIndex` dependency is critical for multi-AI games where `isAITurn` never becomes false. Delay is `AI_THINKING_DELAY_MS = 1200`.
+- **AI animation** — after an AI turn, `aiRecentMoves: Set<string>` highlights placed tiles gold for 1500ms. `scoreFlash` shows "+N" briefly on the score card. Both cleared by a `useRef` timer.
 - **Move preview** — `validateMove` is called live in `GameScreen` on every staged move change. Score shown next to Confirm button; Confirm is disabled until move is fully valid.
 - **Valid placement highlighting** — `getValidPlacementCells()` in `board.ts` returns a `Set<string>` of `"row,col"` keys. Accounts for: adjacency to existing/staged tiles, 6-tile overflow prevention, committed direction (once 2+ tiles staged), first-move center-only rule. Passed to `Board` as `validCells` prop.
 - **Tiles remaining** — shown in header, turns gold when ≤ 10 tiles left.
 - **Quit confirmation** — Menu button toggles inline confirm UI (`confirmingQuit` state) before calling `onReturnToMenu`.
+- **Directions modal** — `constants/directions.ts` is the single source of truth for rule text, imported by both web and mobile `SetupScreen`. Uses `@constants/` alias (configured in Vite, web tsconfig, root tsconfig, and babel.config.js).
+- **Medium AI performance** — `findLineMovesForHand` in `ai.ts` limits candidate cells to within 4 positions of an occupied cell, preventing combinatorial explosion in the early game.
 
 ---
 
 ## To-Do (see notes.md for full list)
-- Clearer active player indicator
-- AI move highlight animation (show what tiles the AI placed, animate score change)
 - AI hard mode (minimax or MCTS)
 - Eventually: Rails multiplayer backend

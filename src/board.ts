@@ -1,13 +1,13 @@
 import {
-  Board,
-  BoardCell,
+  type Board,
+  type BoardCell,
   BOARD_ROWS,
   BOARD_COLS,
   CENTER,
-  PlacedTile,
-  Position,
-  Segment,
-  Tile,
+  type PlacedTile,
+  type Position,
+  type Segment,
+  type Tile,
 } from "./types";
 
 // ─── Board Construction ───────────────────────────────────────────────────────

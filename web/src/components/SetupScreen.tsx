@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { PlayerConfig } from './GameScreen'
 import type { AIDifficulty } from '@engine/ai'
-import { DIRECTIONS } from '@constants/directions'
 import '../styles/SetupScreen.css'
 
 interface SetupScreenProps {
