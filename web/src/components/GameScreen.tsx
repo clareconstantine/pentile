@@ -40,11 +40,13 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
 
   const aiThinking = useRef(false)
   const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const emptyHandSkipping = useRef(false)
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
   const isAITurn = currentPlayer.isAI && gameState.phase === 'playing'
   const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
+  const isEmptyHandTurn = !isAITurn && gameState.phase === 'playing' && currentPlayer.hand.length === 0
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
@@ -102,6 +104,26 @@ useEffect(() => {
   }
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [isAITurn, gameState.currentPlayerIndex])
+
+  // ── Auto-skip for empty-handed human players ──────────────────────────
+
+  useEffect(() => {
+    if (!isEmptyHandTurn || emptyHandSkipping.current) return
+
+    emptyHandSkipping.current = true
+
+    const timer = setTimeout(() => {
+      const result = skipTurn(gameState)
+      if (result.success) setGameState(result.state)
+      emptyHandSkipping.current = false
+    }, 1200)
+
+    return () => {
+      clearTimeout(timer)
+      emptyHandSkipping.current = false
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.currentPlayerIndex, gameState.phase])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -198,7 +220,7 @@ useEffect(() => {
           ))}
         </div>
         <span className={`tiles-remaining ${gameState.tileBag.length <= 10 ? 'tiles-remaining--low' : ''}`}>
-          {gameState.tileBag.length} tiles left
+          {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </span>
         {confirmingQuit ? (
           <div className="quit-confirm">
@@ -252,6 +274,13 @@ useEffect(() => {
                     <span className="thinking-dot" />
                     {currentPlayer.name} is thinking
                   </span>
+                ) : isEmptyHandTurn ? (
+                  <span className="thinking-indicator">
+                    <span className="thinking-dot" />
+                    <span className="thinking-dot" />
+                    <span className="thinking-dot" />
+                    {currentPlayer.name} has no tiles — skipping
+                  </span>
                 ) : (
                   `${currentPlayer.name}'s turn`
                 )}
@@ -261,7 +290,7 @@ useEffect(() => {
               )}
             </div>
 
-            {!isAITurn && (
+            {!isAITurn && !isEmptyHandTurn && (
               <>
                 <Hand
                   tiles={availableHand}
