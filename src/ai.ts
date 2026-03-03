@@ -26,7 +26,7 @@ export function findBestMove(
   const isFirstMove = state.board.every((row) => row.every((cell) => cell === null));
 
   if (difficulty === 'easy') {
-    return findFirstValidMove(state.board, player.hand, isFirstMove);
+    return findDecentMove(state.board, player.hand, isFirstMove);
   }
 
   // medium: find all moves, pick highest scoring
@@ -38,6 +38,23 @@ export function findBestMove(
 }
 
 // ─── Move Generation ──────────────────────────────────────────────────────────
+
+/**
+ * Find a reasonable move: picks randomly from all valid moves that score
+ * at least half the best available score. Better than random but not optimal.
+ */
+function findDecentMove(
+  board: Board,
+  hand: Tile[],
+  isFirstMove: boolean
+): AIMove | null {
+  const allMoves = findAllValidMoves(board, hand, isFirstMove);
+  if (allMoves.length === 0) return null;
+
+  const maxScore = Math.max(...allMoves.map(m => m.score));
+  const decent = allMoves.filter(m => m.score >= maxScore / 2);
+  return pickRandom(decent);
+}
 
 function findFirstValidMove(
   board: Board,
