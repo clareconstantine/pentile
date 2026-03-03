@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './index.css'
-import SetupScreen from './components/SetupScreen'
+import SetupScreen, { type GameOptions } from './components/SetupScreen'
 import GameScreen from './components/GameScreen'
 import type { PlayerConfig } from './components/GameScreen'
 
@@ -10,6 +10,7 @@ type Theme = 'dark' | 'light'
 export default function App() {
   const [screen, setScreen] = useState<Screen>('setup')
   const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([])
+  const [gameOptions, setGameOptions] = useState<GameOptions>({ learningMode: false })
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('pentile-theme')
     if (saved === 'light' || saved === 'dark') return saved
@@ -21,8 +22,9 @@ export default function App() {
     localStorage.setItem('pentile-theme', theme)
   }, [theme])
 
-  const handleStart = (configs: PlayerConfig[]) => {
+  const handleStart = (configs: PlayerConfig[], options: GameOptions) => {
     setPlayerConfigs(configs)
+    setGameOptions(options)
     setScreen('game')
   }
 
@@ -41,6 +43,7 @@ export default function App() {
           onReturnToMenu={handleReturnToMenu}
           isDark={theme === 'dark'}
           onToggleTheme={toggleTheme}
+          learningMode={gameOptions.learningMode}
         />
       ) : (
         <SetupScreen

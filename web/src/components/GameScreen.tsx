@@ -20,11 +20,12 @@ interface GameScreenProps {
   onReturnToMenu: () => void
   isDark?: boolean
   onToggleTheme?: () => void
+  learningMode?: boolean
 }
 
 const AI_THINKING_DELAY_MS = 1200
 
-export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme, learningMode }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -39,6 +40,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onTo
   const [menuState, setMenuState] = useState<'closed' | 'menu' | 'confirming'>('closed')
   const [recentMoves, setRecentMoves] = useState<Set<string>>(new Set())
   const [handoffPending, setHandoffPending] = useState(false)
+  const [turnMaxScore, setTurnMaxScore] = useState<number | null>(null)
   const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
 
   const aiThinking = useRef(false)
@@ -149,6 +151,18 @@ useEffect(() => {
       aiHighlightTimer.current = setTimeout(() => setRecentMoves(new Set()), 1500)
     }
   }, [])
+
+  // ── Learning mode: compute best possible score for this turn ──────────
+
+  useEffect(() => {
+    if (!learningMode || isAITurn || gameState.phase !== 'playing') {
+      setTurnMaxScore(null)
+      return
+    }
+    const best = findBestMove(gameState, 'medium')
+    setTurnMaxScore(best?.score ?? 0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [learningMode, gameState.currentPlayerIndex, gameState.phase])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -370,7 +384,20 @@ useEffect(() => {
                   </button>
                   {movePreview && (
                     <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
-                      {movePreview.valid ? `+${movePreview.score} pts` : movePreview.reason}
+                      {movePreview.valid ? (
+                        <>
+                          +{movePreview.score} pts
+                          {learningMode && turnMaxScore !== null && turnMaxScore > 0 && (
+                            <span className={`learning-pct ${
+                              movePreview.score >= turnMaxScore ? 'learning-pct--optimal' :
+                              movePreview.score / turnMaxScore >= 0.7 ? 'learning-pct--good' :
+                              'learning-pct--low'
+                            }`}>
+                              {Math.min(100, Math.round(movePreview.score / turnMaxScore * 100))}% of potential points
+                            </span>
+                          )}
+                        </>
+                      ) : movePreview.reason}
                     </span>
                   )}
                 </div>

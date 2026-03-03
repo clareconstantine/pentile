@@ -3,8 +3,12 @@ import type { PlayerConfig } from './GameScreen'
 import type { AIDifficulty } from '@engine/ai'
 import '../styles/SetupScreen.css'
 
+export interface GameOptions {
+  learningMode: boolean
+}
+
 interface SetupScreenProps {
-  onStart: (players: PlayerConfig[]) => void
+  onStart: (players: PlayerConfig[], options: GameOptions) => void
   isDark: boolean
   onToggleTheme: () => void
 }
@@ -27,6 +31,7 @@ const DEFAULTS: PlayerSlot[] = [
 export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScreenProps) {
   const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
   const [showDirections, setShowDirections] = useState(false)
+  const [learningMode, setLearningMode] = useState(false)
 
   const activePlayers = slots.filter(s => s.active)
 
@@ -60,7 +65,7 @@ export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScr
         isAI: s.type !== 'human',
         difficulty: s.type === 'human' ? undefined : s.type as AIDifficulty,
       }))
-    onStart(players)
+    onStart(players, { learningMode })
   }
 
   return (
@@ -150,6 +155,14 @@ export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScr
         >
           Start Game
         </button>
+        <label className="learning-toggle">
+          <input
+            type="checkbox"
+            checked={learningMode}
+            onChange={e => setLearningMode(e.target.checked)}
+          />
+          Learning mode
+        </label>
         <div className="setup-bottom-row">
           <button className="how-to-play-btn" onClick={() => setShowDirections(true)}>
             How to play?

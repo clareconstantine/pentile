@@ -282,6 +282,16 @@
   color: var(--text-dim);
 }
 
+.learning-pct {
+  margin-left: 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.learning-pct--optimal { color: var(--gold-light); }
+.learning-pct--good    { color: var(--teal-light); }
+.learning-pct--low     { color: var(--text-dim); }
+
 .handoff {
   display: flex;
   align-items: center;
