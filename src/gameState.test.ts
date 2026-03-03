@@ -229,6 +229,22 @@ describe("end conditions", () => {
     }
   });
 
+  test("second player can still play first move after first player skips", () => {
+    // Regression: isFirstMove was based on turnNumber, not board state.
+    // After player 1 skips, turnNumber is 1, so player 2's move was incorrectly
+    // treated as non-first, failing the "touch existing tile" check.
+    const state = createGame({ playerNames: ["Alice", "Bob"] });
+    const afterSkip = skipTurn(state);
+    if (!afterSkip.success) throw new Error("skip failed");
+
+    // Find a 5-valued tile in Bob's hand (player index 1)
+    const tile5 = afterSkip.state.players[1].hand.find((t) => t.value === 5);
+    if (!tile5) return; // can't test without a 5 — hand is random
+
+    const result = takeTurn(afterSkip.state, [placed(tile5, CENTER.row, CENTER.col)]);
+    expect(result.success).toBe(true);
+  });
+
   test("consecutive skips reset to 0 after a successful placement", () => {
     const state = createGame({ playerNames: ["Alice", "Bob"] });
     const afterSkip = skipTurn(state);

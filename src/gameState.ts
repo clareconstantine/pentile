@@ -153,7 +153,7 @@ export function takeTurn(state: GameState, placed: PlacedTile[]): TurnResult {
   }
 
   const currentPlayer = state.players[state.currentPlayerIndex];
-  const isFirstMove = state.turnNumber === 0;
+  const isFirstMove = state.board.every((row) => row.every((cell) => cell === null));
 
   const handIds = new Set(currentPlayer.hand.map((t) => t.id));
   for (const { tile } of placed) {

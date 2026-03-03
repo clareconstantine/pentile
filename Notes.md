@@ -27,7 +27,6 @@
 - A littlemore gamification in general? but not too much. What else is common?
 
 ## Known Issues
-<!-- add bugs here as they come up -->
 
 ## User Feedback
 - Quick game with fewer tiles and smaller board

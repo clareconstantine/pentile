@@ -23,7 +23,7 @@ export function findBestMove(
   difficulty: AIDifficulty
 ): AIMove | null {
   const player = state.players[state.currentPlayerIndex];
-  const isFirstMove = state.turnNumber === 0;
+  const isFirstMove = state.board.every((row) => row.every((cell) => cell === null));
 
   if (difficulty === 'easy') {
     return findFirstValidMove(state.board, player.hand, isFirstMove);
