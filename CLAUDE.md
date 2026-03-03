@@ -97,7 +97,8 @@ The `@engine/` path alias points to `src/` — configured in both `babel.config.
 
 ### Key implementation details:
 - **AI turn handler** uses a `useRef` flag (`aiThinking`) instead of `useState` to avoid re-render loops. Effect depends on `[isAITurn, gameState.currentPlayerIndex]` — the `currentPlayerIndex` dependency is critical for multi-AI games where `isAITurn` never becomes false. Delay is `AI_THINKING_DELAY_MS = 1200`.
-- **AI animation** — after an AI turn, `aiRecentMoves: Set<string>` highlights placed tiles gold for 1500ms. `scoreFlash` shows "+N" briefly on the score card. Both cleared by a `useRef` timer.
+- **AI animation** — after an AI turn, `aiRecentMoves: Set<string>` highlights placed tiles gold for 1500ms. `scoreFlash` shows "+N" briefly on the score card. Both cleared by a `useRef` timer (`aiHighlightTimer`).
+- **`isFirstMove`** — determined by `board.every(row => row.every(cell => cell === null))` throughout (engine, AI, and both UI layers). NOT `turnNumber === 0` — turns can be skipped on an empty board.
 - **Move preview** — `validateMove` is called live in `GameScreen` on every staged move change. Score shown next to Confirm button; Confirm is disabled until move is fully valid.
 - **Valid placement highlighting** — `getValidPlacementCells()` in `board.ts` returns a `Set<string>` of `"row,col"` keys. Accounts for: adjacency to existing/staged tiles, 6-tile overflow prevention, committed direction (once 2+ tiles staged), first-move center-only rule. Passed to `Board` as `validCells` prop.
 - **Tiles remaining** — shown in header, turns gold when ≤ 10 tiles left.

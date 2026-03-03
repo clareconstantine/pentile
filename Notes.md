@@ -24,9 +24,10 @@
 - Be able to log in
 - Display a player's highest score overall, and their highest scoring turn. At the end of a game, show them stats like highest scoring turn from that game?
 - Badges? For beating another person, each level of the ai, etc. For playing 5 tiles of the same number in one turn. For only playing 0s in one turn, etc.
-- A littlemore gamification in general? but not too much. What else is common?
+- A little more gamification in general? but not too much. What else is common?
 
 ## Known Issues
+- when you select multiple human players, the others are labeled AI not player 2, etc. it does let a human play, but we should make it more clear whose turn it is - maybe popup to pass the game to player 2, they click ok and then see their hand and the previous move in gold
 
 ## User Feedback
 - Quick game with fewer tiles and smaller board
@@ -43,6 +44,7 @@
   - not clear why it says "0 tiles left" when player has tiles in hand
 - visual indicator to make it more clear you can scroll
 - keep opponents' pervious move yellow longer/the whole next turn - if you are zoomed in (especailly relevant on mobile) you might not see that part of the board
+- async multiplayer mode
 
 ## To Test
 - Multiple human player experience, especially with turns and hands and things

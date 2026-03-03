@@ -45,14 +45,15 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
   const isAITurn = currentPlayer.isAI && gameState.phase === 'playing'
+  const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
   const movePreview = stagedMoves.length > 0
-    ? validateMove(gameState.board, stagedMoves, gameState.turnNumber === 0)
+    ? validateMove(gameState.board, stagedMoves, isFirstMove)
     : null
   const validCells = gameState.phase === 'playing' && !isAITurn
-    ? getValidPlacementCells(gameState.board, stagedMoves, gameState.turnNumber === 0)
+    ? getValidPlacementCells(gameState.board, stagedMoves, isFirstMove)
     : new Set<string>()
 
   // ── AI turn handler ──────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
     if (alreadyStaged) return
 
     const newStaged = [...stagedMoves, { tile: selectedTile, position: pos }]
-    const preview = validatePartialMove(gameState.board, newStaged, gameState.turnNumber === 0)
+    const preview = validatePartialMove(gameState.board, newStaged, isFirstMove)
     if (!preview.valid) {
       setMessage(preview.reason)
       return
