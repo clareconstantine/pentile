@@ -6,9 +6,11 @@ interface HandProps {
   tiles: Tile[]
   selectedTile: Tile | null
   onTileSelect: (tile: Tile) => void
+  onTileDragStart?: (tile: Tile) => void
+  onTileDragEnd?: () => void
 }
 
-export default function Hand({ tiles, selectedTile, onTileSelect }: HandProps) {
+export default function Hand({ tiles, selectedTile, onTileSelect, onTileDragStart, onTileDragEnd }: HandProps) {
   return (
     <div className="hand">
       {tiles.map(tile => (
@@ -17,6 +19,8 @@ export default function Hand({ tiles, selectedTile, onTileSelect }: HandProps) {
           tile={tile}
           state={selectedTile?.id === tile.id ? 'selected' : 'hand'}
           onClick={() => onTileSelect(tile)}
+          onDragStart={onTileDragStart ? (e) => { e.dataTransfer.setData('text/plain', tile.id); onTileDragStart(tile) } : undefined}
+          onDragEnd={onTileDragEnd}
         />
       ))}
       {Array.from({ length: Math.max(0, 5 - tiles.length) }, (_, i) => (

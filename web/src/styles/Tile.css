@@ -32,8 +32,12 @@
 .tile--hand {
   background: var(--cream);
   color: var(--navy);
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.tile--hand:active {
+  cursor: grabbing;
 }
 
 .tile--hand:hover {

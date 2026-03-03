@@ -180,6 +180,15 @@ useEffect(() => {
     )
   }, [gameState, stagedMoves, currentPlayer])
 
+  const handleDragStart = useCallback((tile: Tile) => {
+    setSelectedTile(tile)
+    setMessage('')
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    setSelectedTile(null)
+  }, [])
+
   const handleSkip = useCallback(() => {
     setStagedMoves([])
     setSelectedTile(null)
@@ -242,6 +251,7 @@ useEffect(() => {
           recentMoves={aiRecentMoves}
           onCellClick={handleCellClick}
           onStagedClick={handleUnstage}
+          onCellDrop={handleCellClick}
         />
       </main>
 
@@ -296,6 +306,8 @@ useEffect(() => {
                   tiles={availableHand}
                   selectedTile={selectedTile}
                   onTileSelect={handleTileSelect}
+                  onTileDragStart={handleDragStart}
+                  onTileDragEnd={handleDragEnd}
                 />
                 <div className="actions">
                   <button

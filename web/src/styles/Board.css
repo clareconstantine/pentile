@@ -47,6 +47,10 @@
   cursor: pointer;
 }
 
+.cell--drag-over {
+  background: color-mix(in srgb, var(--teal) 55%, var(--navy-mid));
+}
+
 .center-marker {
   width: 6px;
   height: 6px;

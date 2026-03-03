@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Board as BoardType, PlacedTile, Position, Tile } from '@engine/types'
 import { BOARD_ROWS, BOARD_COLS, CENTER } from '@engine/types'
 import TileComponent from './Tile'
@@ -11,6 +12,7 @@ interface BoardProps {
   recentMoves?: Set<string>
   onCellClick: (pos: Position) => void
   onStagedClick: (pos: Position) => void
+  onCellDrop?: (pos: Position) => void
 }
 
 export default function Board({
@@ -21,7 +23,10 @@ export default function Board({
   recentMoves,
   onCellClick,
   onStagedClick,
+  onCellDrop,
 }: BoardProps) {
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+
   const stagedMap = new Map(
     stagedMoves.map(m => [`${m.position.row},${m.position.col}`, m.tile])
   )
@@ -44,6 +49,7 @@ export default function Board({
             const isCenter = row === CENTER.row && col === CENTER.col
             const isValid = validCells?.has(key) ?? false
             const isClickable = isValid && !!selectedTile
+            const isDragOver = dragOverKey === key && isValid && !placedTile && !stagedTile
 
             return (
               <div
@@ -54,6 +60,7 @@ export default function Board({
                   isValid && !selectedTile ? 'cell--valid' : '',
                   isClickable ? 'cell--clickable' : '',
                   stagedTile ? 'cell--staged' : '',
+                  isDragOver ? 'cell--drag-over' : '',
                 ].join(' ')}
                 onClick={() => {
                   if (stagedTile) {
@@ -61,6 +68,18 @@ export default function Board({
                   } else if (!placedTile) {
                     onCellClick(pos)
                   }
+                }}
+                onDragOver={(e) => {
+                  if (onCellDrop && isValid && !placedTile && !stagedTile) {
+                    e.preventDefault()
+                    setDragOverKey(key)
+                  }
+                }}
+                onDragLeave={() => setDragOverKey(null)}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setDragOverKey(null)
+                  if (!placedTile && !stagedTile) onCellDrop?.(pos)
                 }}
               >
                 {placedTile && (
