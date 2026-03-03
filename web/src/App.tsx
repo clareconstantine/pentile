@@ -39,13 +39,16 @@ export default function App() {
           key={playerConfigs.map(p => p.name).join(',')}
           playerConfigs={playerConfigs}
           onReturnToMenu={handleReturnToMenu}
+          isDark={theme === 'dark'}
+          onToggleTheme={toggleTheme}
         />
       ) : (
-        <SetupScreen onStart={handleStart} />
+        <SetupScreen
+          onStart={handleStart}
+          isDark={theme === 'dark'}
+          onToggleTheme={toggleTheme}
+        />
       )}
-      <button className="theme-toggle" onClick={toggleTheme}>
-        {theme === 'dark' ? 'Light' : 'Dark'}
-      </button>
     </>
   )
 }

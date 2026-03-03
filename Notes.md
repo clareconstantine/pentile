@@ -5,6 +5,7 @@
 ## UI / UX
 - Accessibility
   - keyboard nav
+- Setup screen: name input field not obviously editable — add a subtle border/underline on hover/focus
 
 ## New Features
 - Quick game mode - smaller board and fewer tiles

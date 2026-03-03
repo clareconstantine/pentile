@@ -18,11 +18,13 @@ export interface PlayerConfig {
 interface GameScreenProps {
   playerConfigs: PlayerConfig[]
   onReturnToMenu: () => void
+  isDark: boolean
+  onToggleTheme: () => void
 }
 
 const AI_THINKING_DELAY_MS = 1200
 
-export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -34,26 +36,29 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [stagedMoves, setStagedMoves] = useState<PlacedTile[]>([])
   const [message, setMessage] = useState<string>('')
-  const [confirmingQuit, setConfirmingQuit] = useState(false)
-  const [aiRecentMoves, setAiRecentMoves] = useState<Set<string>>(new Set())
+  const [menuState, setMenuState] = useState<'closed' | 'menu' | 'confirming'>('closed')
+  const [recentMoves, setRecentMoves] = useState<Set<string>>(new Set())
+  const [handoffPending, setHandoffPending] = useState(false)
   const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
 
   const aiThinking = useRef(false)
   const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const emptyHandSkipping = useRef(false)
+  const pendingHandoffMoves = useRef<Set<string>>(new Set())
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
   const isAITurn = currentPlayer.isAI && gameState.phase === 'playing'
   const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
   const isEmptyHandTurn = !isAITurn && gameState.phase === 'playing' && currentPlayer.hand.length === 0
+  const multipleHumans = playerConfigs.filter(p => !p.isAI).length > 1
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
   const movePreview = stagedMoves.length > 0
     ? validateMove(gameState.board, stagedMoves, isFirstMove)
     : null
-  const validCells = gameState.phase === 'playing' && !isAITurn
+  const validCells = gameState.phase === 'playing' && !isAITurn && !handoffPending
     ? getValidPlacementCells(gameState.board, stagedMoves, isFirstMove)
     : new Set<string>()
 
@@ -82,11 +87,11 @@ useEffect(() => {
               : `${currentPlayer.name} scored +${result.scoreEarned}!`
           )
           const positions = new Set(move.placed.map(p => `${p.position.row},${p.position.col}`))
-          setAiRecentMoves(positions)
+          setRecentMoves(positions)
           setScoreFlash({ playerIndex: gameState.currentPlayerIndex, amount: result.scoreEarned })
           if (aiHighlightTimer.current) clearTimeout(aiHighlightTimer.current)
           aiHighlightTimer.current = setTimeout(() => {
-            setAiRecentMoves(new Set())
+            setRecentMoves(new Set())
             setScoreFlash(null)
           }, 1500)
         }
@@ -124,6 +129,26 @@ useEffect(() => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.currentPlayerIndex, gameState.phase])
+
+  // ── Pass-the-device handoff ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!multipleHumans || gameState.phase !== 'playing' || gameState.turnNumber === 0) return
+    const player = gameState.players[gameState.currentPlayerIndex]
+    if (player.isAI || player.hand.length === 0) return
+    setHandoffPending(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.currentPlayerIndex, gameState.phase])
+
+  const handleHandoffReady = useCallback(() => {
+    setHandoffPending(false)
+    if (pendingHandoffMoves.current.size > 0) {
+      setRecentMoves(pendingHandoffMoves.current)
+      pendingHandoffMoves.current = new Set()
+      if (aiHighlightTimer.current) clearTimeout(aiHighlightTimer.current)
+      aiHighlightTimer.current = setTimeout(() => setRecentMoves(new Set()), 1500)
+    }
+  }, [])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -170,6 +195,9 @@ useEffect(() => {
       setMessage(result.reason)
       return
     }
+    if (multipleHumans) {
+      pendingHandoffMoves.current = new Set(stagedMoves.map(m => `${m.position.row},${m.position.col}`))
+    }
     setGameState(result.state)
     setStagedMoves([])
     setSelectedTile(null)
@@ -178,7 +206,7 @@ useEffect(() => {
         ? 'Game over!'
         : `+${result.scoreEarned} points for ${currentPlayer.name}!`
     )
-  }, [gameState, stagedMoves, currentPlayer])
+  }, [gameState, stagedMoves, currentPlayer, multipleHumans])
 
   const handleDragStart = useCallback((tile: Tile) => {
     setSelectedTile(tile)
@@ -231,14 +259,20 @@ useEffect(() => {
         <span className={`tiles-remaining ${gameState.tileBag.length <= 10 ? 'tiles-remaining--low' : ''}`}>
           {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </span>
-        {confirmingQuit ? (
+        {menuState === 'confirming' ? (
           <div className="quit-confirm">
             <span className="quit-confirm-label">Quit game?</span>
             <button className="btn btn-danger" onClick={onReturnToMenu}>Quit</button>
-            <button className="btn btn-ghost" onClick={() => setConfirmingQuit(false)}>Cancel</button>
+            <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>Cancel</button>
+          </div>
+        ) : menuState === 'menu' ? (
+          <div className="quit-confirm">
+            <button className="btn btn-ghost" onClick={onToggleTheme}>{isDark ? 'Light' : 'Dark'}</button>
+            <button className="btn btn-danger" onClick={() => setMenuState('confirming')}>Quit</button>
+            <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>✕</button>
           </div>
         ) : (
-          <button className="btn btn-ghost" onClick={() => setConfirmingQuit(true)}>Menu</button>
+          <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Menu</button>
         )}
       </header>
 
@@ -248,7 +282,7 @@ useEffect(() => {
           stagedMoves={stagedMoves}
           selectedTile={selectedTile}
           validCells={validCells}
-          recentMoves={aiRecentMoves}
+          recentMoves={recentMoves}
           onCellClick={handleCellClick}
           onStagedClick={handleUnstage}
           onCellDrop={handleCellClick}
@@ -256,7 +290,17 @@ useEffect(() => {
       </main>
 
       <footer className="game-footer">
-        {gameState.phase === 'finished' ? (
+        {handoffPending ? (
+          <div className="handoff">
+            <div className="handoff-info">
+              <span className="handoff-name">{currentPlayer.name}'s turn</span>
+              <span className="handoff-hint">Pass the device, then tap Ready</span>
+            </div>
+            <button className="btn btn-primary" onClick={handleHandoffReady}>
+              Ready →
+            </button>
+          </div>
+        ) : gameState.phase === 'finished' ? (
           <div className="game-over">
             <div className="game-over-title">Game Over</div>
             <div className="game-over-winner">

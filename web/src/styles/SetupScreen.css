@@ -196,11 +196,17 @@
   text-transform: uppercase;
   cursor: pointer;
   padding: 4px;
-  margin-top: 4px;
   transition: color 0.15s;
 }
 
 .how-to-play-btn:hover { color: var(--cream); }
+
+.setup-bottom-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-top: 4px;
+}
 
 /* Directions modal */
 

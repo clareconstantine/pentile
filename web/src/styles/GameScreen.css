@@ -281,3 +281,30 @@
 .move-preview--invalid {
   color: var(--text-dim);
 }
+
+.handoff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.handoff-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.handoff-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+}
+
+.handoff-hint {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
