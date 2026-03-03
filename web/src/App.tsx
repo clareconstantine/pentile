@@ -11,6 +11,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('setup')
   const [playerConfigs, setPlayerConfigs] = useState<PlayerConfig[]>([])
   const [gameOptions, setGameOptions] = useState<GameOptions>({ learningMode: false })
+  const [challengeMode, setChallengeMode] = useState(() =>
+    localStorage.getItem('pentile-challenge') === 'true'
+  )
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('pentile-theme')
     if (saved === 'light' || saved === 'dark') return saved
@@ -34,6 +37,11 @@ export default function App() {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
+  const toggleChallengeMode = () => setChallengeMode(c => {
+    localStorage.setItem('pentile-challenge', String(!c))
+    return !c
+  })
+
   return (
     <>
       {screen === 'game' && playerConfigs.length > 0 ? (
@@ -44,6 +52,8 @@ export default function App() {
           isDark={theme === 'dark'}
           onToggleTheme={toggleTheme}
           learningMode={gameOptions.learningMode}
+          challengeMode={challengeMode}
+          onToggleChallengeMode={toggleChallengeMode}
         />
       ) : (
         <SetupScreen

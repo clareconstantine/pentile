@@ -194,6 +194,11 @@
   border: 1px solid var(--navy-light);
 }
 
+.btn-ghost--active {
+  color: var(--teal-light);
+  border-color: var(--teal);
+}
+
 .ai-badge {
   margin-left: 6px;
   font-size: 0.55rem;

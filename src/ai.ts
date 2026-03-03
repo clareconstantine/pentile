@@ -56,38 +56,6 @@ function findDecentMove(
   return pickRandom(decent);
 }
 
-function findFirstValidMove(
-  board: Board,
-  hand: Tile[],
-  isFirstMove: boolean
-): AIMove | null {
-  const candidates = isFirstMove
-    ? getFirstMoveCandidates()
-    : getAdjacentCandidates(board);
-
-  // Shuffle candidates so easy mode doesn't always play in the same spot
-  const shuffledCandidates = [...candidates].sort(() => Math.random() - 0.5)
-  const shuffledHand = [...hand].sort(() => Math.random() - 0.5)
-
-  // Try single tiles first — fast
-  for (const tile of shuffledHand) {
-    for (const pos of shuffledCandidates) {
-      if (!isEmpty(board, pos)) continue;
-      const placed: PlacedTile[] = [{ tile, position: pos }];
-      const result = validateMove(board, placed, isFirstMove);
-      if (result.valid) return { placed, score: result.score };
-    }
-  }
-
-  // Fall back to multi-tile if no single tile works
-  const lines = getCandidateLines(board, candidates, isFirstMove);
-  for (const line of lines) {
-    const moves = findLineMovesForHand(board, hand, line, isFirstMove);
-    if (moves.length > 0) return pickRandom(moves);
-  }
-
-  return null;
-}
 
 function findAllValidMoves(
   board: Board,
