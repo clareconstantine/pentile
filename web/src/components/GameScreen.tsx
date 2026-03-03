@@ -18,8 +18,8 @@ export interface PlayerConfig {
 interface GameScreenProps {
   playerConfigs: PlayerConfig[]
   onReturnToMenu: () => void
-  isDark: boolean
-  onToggleTheme: () => void
+  isDark?: boolean
+  onToggleTheme?: () => void
 }
 
 const AI_THINKING_DELAY_MS = 1200

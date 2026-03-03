@@ -22,7 +22,7 @@ describe('GameScreen', () => {
 
     it('shows tiles remaining in bag', () => {
       render(<GameScreen playerConfigs={twoHumans} onReturnToMenu={vi.fn()} />)
-      expect(screen.getByText(`${INITIAL_BAG_SIZE} tiles left`)).toBeInTheDocument()
+      expect(screen.getByText(`${INITIAL_BAG_SIZE} tiles in bag`)).toBeInTheDocument()
     })
 
     it('shows whose turn it is', () => {
@@ -32,11 +32,12 @@ describe('GameScreen', () => {
   })
 
   describe('quit confirmation', () => {
-    it('shows confirm UI when Menu is clicked', async () => {
+    it('shows confirm UI when Quit is clicked in menu', async () => {
       const user = userEvent.setup()
       render(<GameScreen playerConfigs={solo} onReturnToMenu={vi.fn()} />)
 
       await user.click(screen.getByRole('button', { name: 'Menu' }))
+      await user.click(screen.getByRole('button', { name: 'Quit' }))
 
       expect(screen.getByText('Quit game?')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Quit' })).toBeInTheDocument()
@@ -48,6 +49,7 @@ describe('GameScreen', () => {
       render(<GameScreen playerConfigs={solo} onReturnToMenu={vi.fn()} />)
 
       await user.click(screen.getByRole('button', { name: 'Menu' }))
+      await user.click(screen.getByRole('button', { name: 'Quit' }))
       await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
       expect(screen.queryByText('Quit game?')).not.toBeInTheDocument()
@@ -60,6 +62,7 @@ describe('GameScreen', () => {
       render(<GameScreen playerConfigs={solo} onReturnToMenu={onReturnToMenu} />)
 
       await user.click(screen.getByRole('button', { name: 'Menu' }))
+      await user.click(screen.getByRole('button', { name: 'Quit' }))
       await user.click(screen.getByRole('button', { name: 'Quit' }))
 
       expect(onReturnToMenu).toHaveBeenCalledOnce()
