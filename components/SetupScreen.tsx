@@ -5,8 +5,12 @@ import type { AIDifficulty } from '@engine/ai'
 import { colors } from '../constants/design'
 import { DIRECTIONS } from '@constants/directions'
 
+export interface GameOptions {
+  learningMode: boolean
+}
+
 interface SetupScreenProps {
-  onStart: (players: PlayerConfig[]) => void
+  onStart: (players: PlayerConfig[], options: GameOptions) => void
 }
 
 type PlayerType = 'human' | 'easy' | 'medium'
@@ -28,11 +32,24 @@ const DEFAULTS: PlayerSlot[] = [
 export default function SetupScreen({ onStart }: SetupScreenProps) {
   const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
   const [showDirections, setShowDirections] = useState(false)
+  const [learningMode, setLearningMode] = useState(false)
 
   const activePlayers = slots.filter(s => s.active)
 
   const updateSlot = (index: number, update: Partial<PlayerSlot>) => {
     setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...update } : s))
+  }
+
+  const handleTypeChange = (index: number, type: PlayerType) => {
+    const slot = slots[index]
+    const updates: Partial<PlayerSlot> = { type }
+    if (type === 'human' && slot.type !== 'human' && slot.name === 'CPU') {
+      updates.name = `Player ${index + 1}`
+    }
+    if (type !== 'human' && slot.type === 'human' && slot.name === `Player ${index + 1}`) {
+      updates.name = 'CPU'
+    }
+    updateSlot(index, updates)
   }
 
   const toggleSlot = (index: number) => {
@@ -49,7 +66,7 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
         isAI: s.type !== 'human',
         difficulty: s.type === 'human' ? undefined : s.type as AIDifficulty,
       }))
-    onStart(players)
+    onStart(players, { learningMode })
   }
 
   return (
@@ -104,7 +121,7 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
                     {(['human', 'easy', 'medium'] as PlayerType[]).map(type => (
                       <Pressable
                         key={type}
-                        onPress={() => updateSlot(i, { type })}
+                        onPress={() => handleTypeChange(i, type)}
                         style={[styles.typeBtn, slot.type === type && styles.typeBtnSelected]}
                       >
                         <Text style={[styles.typeBtnText, slot.type === type && styles.typeBtnTextSelected]}>
@@ -129,6 +146,14 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
           ]}
         >
           <Text style={styles.startBtnText}>Start Game</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setLearningMode(v => !v)}
+          style={[styles.learningToggle, learningMode && styles.learningToggleActive]}
+        >
+          <Text style={[styles.learningToggleText, learningMode && styles.learningToggleTextActive]}>
+            Learning mode
+          </Text>
         </Pressable>
         <Pressable onPress={() => setShowDirections(true)} style={styles.howToPlayBtn}>
           <Text style={styles.howToPlayText}>How to play?</Text>
@@ -273,6 +298,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 1,
+  },
+  learningToggle: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+  },
+  learningToggleActive: {
+    borderColor: colors.teal,
+    backgroundColor: 'rgba(44,180,180,0.15)',
+  },
+  learningToggleText: {
+    color: colors.creamDark,
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
+  learningToggleTextActive: {
+    color: colors.tealLight,
+    fontWeight: '600',
   },
   howToPlayBtn: {
     marginTop: 8,
