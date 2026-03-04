@@ -115,18 +115,30 @@ The `@engine/` path alias points to `src/` — configured in both `babel.config.
 - **Medium AI performance** — `findLineMovesForHand` in `ai.ts` limits candidate cells to within 4 positions of an occupied cell, preventing combinatorial explosion in the early game.
 
 ### Web/mobile divergence
-The mobile components (`components/`) have NOT been updated with today's changes. Features added to web only so far:
-- Tiles in bag label fix + empty hand auto-skip
-- Drag and drop
-- Pass-the-device handoff
-- Auto-rename on type change
-- Menu refactor (menuState, theme toggle, challenge mode toggle)
-- Easy AI improvement
-- Learning mode + challenge mode
+Web and mobile are at parity as of the most recent commits.
+
+---
+
+## App Store Launch
+
+### EAS / Build config
+- EAS configured: `eas.json` in root, project linked to `@clareconstantine/pentile`
+- iOS bundle identifier: `com.clareconstantine.pentile`
+- Apple Developer Program enrollment in progress (can take up to 48hrs to activate)
+- Once active, test with: `eas build --profile preview --platform ios`
+- Full checklist in `app-store-launch.md`
+
+### App contact / accounts
+- App email: `pentileapp@gmail.com`
+- Apple ID used for enrollment: `clare12@stanford.edu`
+
+### Privacy policy
+- Hosted at: `https://clareconstantine.github.io/pentile/privacy-policy`
+- Source: `privacy-policy.md` in the root of the GitHub repo
+- Content: no data collected, no tracking, contact pentileapp@gmail.com
 
 ---
 
 ## To-Do (see notes.md for full list)
-- Port today's web changes to mobile components
 - AI hard mode (minimax or MCTS)
 - Eventually: Rails multiplayer backend

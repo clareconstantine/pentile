@@ -3,7 +3,7 @@ Based on the board game Quinto
 
 ## Current State
 - **Web app** — fully working (Vite + React + TypeScript)
-- **Mobile app** — fully working (Expo + React Native), tested on device via Expo Go
+- **Mobile app** — fully working (Expo + React Native), tested on device via Expo Go; App Store submission in progress
 - **Multiplayer backend** — not started yet
 
 ## The Tech Stack
@@ -79,6 +79,11 @@ cd web && npm run dev
 ```bash
 npx expo start
 # scan QR with Expo Go, or press w for browser
+```
+
+**Standalone iOS build (requires active Apple Developer account):**
+```bash
+eas build --profile preview --platform ios
 ```
 
 **Tests (engine only):**

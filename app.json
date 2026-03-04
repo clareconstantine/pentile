@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "pentile",
+    "name": "Pentile",
     "slug": "pentile",
     "version": "1.0.0",
     "orientation": "landscape",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0f1923"
     },
     "ios": {
       "supportsTablet": true,
