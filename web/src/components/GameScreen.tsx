@@ -339,79 +339,74 @@ useEffect(() => {
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="turn-info">
-              <span className="turn-player">
-                {isAITurn ? (
-                  <span className="thinking-indicator">
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    {currentPlayer.name} is thinking
-                  </span>
-                ) : isEmptyHandTurn ? (
-                  <span className="thinking-indicator">
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    {currentPlayer.name} has no tiles — skipping
-                  </span>
-                ) : (
-                  `${currentPlayer.name}'s turn`
-                )}
-              </span>
-              {message && !isAITurn && (
-                <span className="turn-message">{message}</span>
-              )}
+        ) : !isAITurn && !isEmptyHandTurn ? (
+          <div className="footer-row">
+            <div className="footer-left">
+              <span className="turn-player">{currentPlayer.name}'s turn</span>
+              {message && <span className="turn-message">{message}</span>}
+              <Hand
+                tiles={availableHand}
+                selectedTile={selectedTile}
+                onTileSelect={handleTileSelect}
+                onTileDragStart={handleDragStart}
+                onTileDragEnd={handleDragEnd}
+              />
             </div>
-
-            {!isAITurn && !isEmptyHandTurn && (
-              <>
-                <Hand
-                  tiles={availableHand}
-                  selectedTile={selectedTile}
-                  onTileSelect={handleTileSelect}
-                  onTileDragStart={handleDragStart}
-                  onTileDragEnd={handleDragEnd}
-                />
-                <div className="actions">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={handleSkip}
-                    disabled={stagedMoves.length > 0}
-                  >
-                    Skip Turn
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleConfirm}
-                    disabled={!movePreview?.valid}
-                  >
-                    Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
-                  </button>
-                  {movePreview && (
-                    <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
-                      {movePreview.valid ? (
-                        <>
-                          +{movePreview.score} pts
-                          {learningMode && turnMaxScore !== null && turnMaxScore > 0 && (
-                            <span className={`learning-pct ${
-                              movePreview.score >= turnMaxScore ? 'learning-pct--optimal' :
-                              movePreview.score / turnMaxScore >= 0.7 ? 'learning-pct--good' :
-                              'learning-pct--low'
-                            }`}>
-                              {Math.min(100, Math.round(movePreview.score / turnMaxScore * 100))}% of potential points
-                            </span>
-                          )}
-                        </>
-                      ) : movePreview.reason}
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
-          </>
+            <div className="actions">
+              {movePreview && (
+                <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
+                  {movePreview.valid ? (
+                    <>
+                      +{movePreview.score} pts
+                      {learningMode && turnMaxScore !== null && turnMaxScore > 0 && (
+                        <span className={`learning-pct ${
+                          movePreview.score >= turnMaxScore ? 'learning-pct--optimal' :
+                          movePreview.score / turnMaxScore >= 0.7 ? 'learning-pct--good' :
+                          'learning-pct--low'
+                        }`}>
+                          {Math.min(100, Math.round(movePreview.score / turnMaxScore * 100))}% of potential points
+                        </span>
+                      )}
+                    </>
+                  ) : movePreview.reason}
+                </span>
+              )}
+              <button
+                className="btn btn-primary"
+                onClick={handleConfirm}
+                disabled={!movePreview?.valid}
+              >
+                Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={handleSkip}
+                disabled={stagedMoves.length > 0}
+              >
+                Skip Turn
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="turn-info">
+            <span className="turn-player">
+              {isAITurn ? (
+                <span className="thinking-indicator">
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  {currentPlayer.name} is thinking
+                </span>
+              ) : (
+                <span className="thinking-indicator">
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  {currentPlayer.name} has no tiles — skipping
+                </span>
+              )}
+            </span>
+          </div>
         )}
       </footer>
     </div>
