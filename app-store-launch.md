@@ -6,41 +6,41 @@
 ## Mobile
 
 ### 1. Finish the app
-- [ ] UI polish (footer layout, etc.)
-- [ ] Mobile feature parity with web
-- [ ] Test as a standalone build (not Expo Go) — `eas build` and install the .ipa/.apk directly
+- [x] UI polish (footer layout, etc.)
+- [x] Mobile feature parity with web
+- [ ] Test as a standalone build (not Expo Go) — `eas build --profile preview --platform ios`, then install .ipa directly
+  - Blocked until Apple Developer Program activates
 
 ### 2. App assets
-- [x] App icon — 1024×1024px, no transparency, no rounded corners
-- [x] Splash screen
+- [x] App icon — 1024×1024px (`assets/icon.png`)
+- [x] Splash screen (`assets/splash-icon.png`, navy background `#0f1923`)
 - [ ] Screenshots — multiple device sizes required
   - iOS: iPhone 6.7", 6.5", iPad
-  - Android: various sizes
 
 ### 3. Configure app.json
-- [ ] `bundleIdentifier` (iOS, e.g. `com.yourname.pentile`)
-- [ ] `package` (Android, e.g. `com.yourname.pentile`)
-- [ ] `version`, `buildNumber` (iOS), `versionCode` (Android)
-- [ ] Display name, orientation (landscape-only — verify Apple guidelines)
+- [x] `bundleIdentifier` — `com.clareconstantine.pentile`
+- [x] Encryption flag — `ITSAppUsesNonExemptEncryption: false`
+- [ ] `version`, `buildNumber` — currently `1.0.0` / `1` (fine for first submission)
+- [x] Display name — `pentile`
+- [x] Orientation — landscape
 
 ### 4. Developer accounts
-- [ ] Apple Developer Program — $99/year, up to 48hrs to activate (start early!)
-- [ ] Google Play Developer — $25 one-time
+- [x] EAS — logged in as `clareconstantine`
+- [x] EAS project configured — `@clareconstantine/pentile`
+- [ ] Apple Developer Program — enrollment in progress (up to 48hrs to activate)
+- [ ] Google Play Developer — $25 one-time (skip for now, iOS first)
 
 ### 5. EAS Build setup
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure
-eas build --platform all
-```
-EAS handles certificates and signing.
+- [x] `eas.json` configured with `development`, `preview`, `production` profiles
+- [x] `appVersionSource: remote`
+- To build: `eas build --profile preview --platform ios`
 
 ### 6. Privacy policy
-- [x] Write a simple privacy policy (no user data collected = easy)
-- [x] Host it at a public URL — https://clareconstantine.github.io/pentile/privacy-policy
+- [x] Written (no data collected, contact pentileapp@gmail.com)
+- [x] Hosted at https://clareconstantine.github.io/pentile/privacy-policy
 
 ### 7. Store listings
+- [x] App name — "Pentile"
 - [ ] App description and keywords
 - [ ] Category: Games
 - [ ] Age rating questionnaire
@@ -48,10 +48,9 @@ EAS handles certificates and signing.
 
 ### 8. Submit
 ```bash
-eas submit --platform all
+eas submit --platform ios
 ```
 - Apple review: typically 1–3 days
-- Android review: usually faster
 
 ## Risks / things to watch
 - **Apple review** — landscape-only apps are fine but less common; make sure the app feels complete
