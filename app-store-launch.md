@@ -11,8 +11,8 @@
 - [ ] Test as a standalone build (not Expo Go) — `eas build` and install the .ipa/.apk directly
 
 ### 2. App assets
-- [ ] App icon — 1024×1024px, no transparency, no rounded corners
-- [ ] Splash screen
+- [x] App icon — 1024×1024px, no transparency, no rounded corners
+- [x] Splash screen
 - [ ] Screenshots — multiple device sizes required
   - iOS: iPhone 6.7", 6.5", iPad
   - Android: various sizes
@@ -37,8 +37,8 @@ eas build --platform all
 EAS handles certificates and signing.
 
 ### 6. Privacy policy
-- [ ] Write a simple privacy policy (no user data collected = easy)
-- [ ] Host it at a public URL
+- [x] Write a simple privacy policy (no user data collected = easy)
+- [x] Host it at a public URL — https://clareconstantine.github.io/pentile/privacy-policy
 
 ### 7. Store listings
 - [ ] App description and keywords
