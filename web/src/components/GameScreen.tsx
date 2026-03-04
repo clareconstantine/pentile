@@ -21,11 +21,13 @@ interface GameScreenProps {
   isDark?: boolean
   onToggleTheme?: () => void
   learningMode?: boolean
+  challengeMode?: boolean
+  onToggleChallengeMode?: () => void
 }
 
 const AI_THINKING_DELAY_MS = 1200
 
-export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme, learningMode }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -144,6 +146,7 @@ useEffect(() => {
 
   const handleHandoffReady = useCallback(() => {
     setHandoffPending(false)
+    setMessage('')
     if (pendingHandoffMoves.current.size > 0) {
       setRecentMoves(pendingHandoffMoves.current)
       pendingHandoffMoves.current = new Set()
@@ -155,14 +158,14 @@ useEffect(() => {
   // ── Learning mode: compute best possible score for this turn ──────────
 
   useEffect(() => {
-    if (!learningMode || isAITurn || gameState.phase !== 'playing') {
+    if (!(learningMode || challengeMode) || isAITurn || gameState.phase !== 'playing') {
       setTurnMaxScore(null)
       return
     }
     const best = findBestMove(gameState, 'medium')
     setTurnMaxScore(best?.score ?? 0)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [learningMode, gameState.currentPlayerIndex, gameState.phase])
+  }, [learningMode, challengeMode, gameState.currentPlayerIndex, gameState.phase])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -215,12 +218,15 @@ useEffect(() => {
     setGameState(result.state)
     setStagedMoves([])
     setSelectedTile(null)
+    const pct = challengeMode && !learningMode && turnMaxScore !== null && turnMaxScore > 0
+      ? ` · ${Math.min(100, Math.round(result.scoreEarned / turnMaxScore * 100))}% of potential`
+      : ''
     setMessage(
       result.state.phase === 'finished'
         ? 'Game over!'
-        : `+${result.scoreEarned} points for ${currentPlayer.name}!`
+        : `+${result.scoreEarned} points for ${currentPlayer.name}!${pct}`
     )
-  }, [gameState, stagedMoves, currentPlayer, multipleHumans])
+  }, [gameState, stagedMoves, currentPlayer, multipleHumans, challengeMode, turnMaxScore])
 
   const handleDragStart = useCallback((tile: Tile) => {
     setSelectedTile(tile)
@@ -282,6 +288,7 @@ useEffect(() => {
         ) : menuState === 'menu' ? (
           <div className="quit-confirm">
             <button className="btn btn-ghost" onClick={onToggleTheme}>{isDark ? 'Light' : 'Dark'}</button>
+            <button className={`btn btn-ghost ${challengeMode ? 'btn-ghost--active' : ''}`} onClick={onToggleChallengeMode}>Challenge</button>
             <button className="btn btn-danger" onClick={() => setMenuState('confirming')}>Quit</button>
             <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>✕</button>
           </div>
@@ -307,6 +314,7 @@ useEffect(() => {
         {handoffPending ? (
           <div className="handoff">
             <div className="handoff-info">
+              {message && <span className="turn-message">{message}</span>}
               <span className="handoff-name">{currentPlayer.name}'s turn</span>
               <span className="handoff-hint">Pass the device, then tap Ready</span>
             </div>
@@ -331,79 +339,74 @@ useEffect(() => {
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="turn-info">
-              <span className="turn-player">
-                {isAITurn ? (
-                  <span className="thinking-indicator">
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    {currentPlayer.name} is thinking
-                  </span>
-                ) : isEmptyHandTurn ? (
-                  <span className="thinking-indicator">
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    <span className="thinking-dot" />
-                    {currentPlayer.name} has no tiles — skipping
-                  </span>
-                ) : (
-                  `${currentPlayer.name}'s turn`
-                )}
-              </span>
-              {message && !isAITurn && (
-                <span className="turn-message">{message}</span>
-              )}
+        ) : !isAITurn && !isEmptyHandTurn ? (
+          <div className="footer-row">
+            <div className="footer-left">
+              <span className="turn-player">{currentPlayer.name}'s turn</span>
+              {message && <span className="turn-message">{message}</span>}
+              <Hand
+                tiles={availableHand}
+                selectedTile={selectedTile}
+                onTileSelect={handleTileSelect}
+                onTileDragStart={handleDragStart}
+                onTileDragEnd={handleDragEnd}
+              />
             </div>
-
-            {!isAITurn && !isEmptyHandTurn && (
-              <>
-                <Hand
-                  tiles={availableHand}
-                  selectedTile={selectedTile}
-                  onTileSelect={handleTileSelect}
-                  onTileDragStart={handleDragStart}
-                  onTileDragEnd={handleDragEnd}
-                />
-                <div className="actions">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={handleSkip}
-                    disabled={stagedMoves.length > 0}
-                  >
-                    Skip Turn
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleConfirm}
-                    disabled={!movePreview?.valid}
-                  >
-                    Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
-                  </button>
-                  {movePreview && (
-                    <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
-                      {movePreview.valid ? (
-                        <>
-                          +{movePreview.score} pts
-                          {learningMode && turnMaxScore !== null && turnMaxScore > 0 && (
-                            <span className={`learning-pct ${
-                              movePreview.score >= turnMaxScore ? 'learning-pct--optimal' :
-                              movePreview.score / turnMaxScore >= 0.7 ? 'learning-pct--good' :
-                              'learning-pct--low'
-                            }`}>
-                              {Math.min(100, Math.round(movePreview.score / turnMaxScore * 100))}% of potential points
-                            </span>
-                          )}
-                        </>
-                      ) : movePreview.reason}
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
-          </>
+            <div className="actions">
+              {movePreview && (
+                <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
+                  {movePreview.valid ? (
+                    <>
+                      +{movePreview.score} pts
+                      {learningMode && turnMaxScore !== null && turnMaxScore > 0 && (
+                        <span className={`learning-pct ${
+                          movePreview.score >= turnMaxScore ? 'learning-pct--optimal' :
+                          movePreview.score / turnMaxScore >= 0.7 ? 'learning-pct--good' :
+                          'learning-pct--low'
+                        }`}>
+                          {Math.min(100, Math.round(movePreview.score / turnMaxScore * 100))}% of potential points
+                        </span>
+                      )}
+                    </>
+                  ) : movePreview.reason}
+                </span>
+              )}
+              <button
+                className="btn btn-primary"
+                onClick={handleConfirm}
+                disabled={!movePreview?.valid}
+              >
+                Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={handleSkip}
+                disabled={stagedMoves.length > 0}
+              >
+                Skip Turn
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="turn-info">
+            <span className="turn-player">
+              {isAITurn ? (
+                <span className="thinking-indicator">
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  {currentPlayer.name} is thinking
+                </span>
+              ) : (
+                <span className="thinking-indicator">
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  <span className="thinking-dot" />
+                  {currentPlayer.name} has no tiles — skipping
+                </span>
+              )}
+            </span>
+          </div>
         )}
       </footer>
     </div>

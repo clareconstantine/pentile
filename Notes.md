@@ -6,6 +6,8 @@
 - Accessibility
   - keyboard nav
 - Setup screen: name input field not obviously editable — add a subtle border/underline on hover/focus
+- Setup screen: make "How to Play?" more visually prominent
+- Setup screen: remove the light/dark mode toggle (it's in the in-game Menu)
 
 ## New Features
 - Quick game mode - smaller board and fewer tiles

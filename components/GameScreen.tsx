@@ -19,11 +19,14 @@ export interface PlayerConfig {
 interface GameScreenProps {
   playerConfigs: PlayerConfig[]
   onReturnToMenu: () => void
+  learningMode?: boolean
+  challengeMode?: boolean
+  onToggleChallengeMode?: () => void
 }
 
 const AI_THINKING_DELAY_MS = 1200
 
-export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -35,26 +38,30 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null)
   const [stagedMoves, setStagedMoves] = useState<PlacedTile[]>([])
   const [message, setMessage] = useState<string>('')
-  const [confirmingQuit, setConfirmingQuit] = useState(false)
-  const [aiRecentMoves, setAiRecentMoves] = useState<Set<string>>(new Set())
+  const [menuState, setMenuState] = useState<'closed' | 'menu' | 'confirming'>('closed')
+  const [recentMoves, setRecentMoves] = useState<Set<string>>(new Set())
+  const [handoffPending, setHandoffPending] = useState(false)
+  const [turnMaxScore, setTurnMaxScore] = useState<number | null>(null)
   const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
 
   const aiThinking = useRef(false)
   const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const emptyHandSkipping = useRef(false)
+  const pendingHandoffMoves = useRef<Set<string>>(new Set())
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex]
   const currentConfig = playerConfigs[gameState.currentPlayerIndex]
   const isAITurn = currentPlayer.isAI && gameState.phase === 'playing'
   const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
   const isEmptyHandTurn = !isAITurn && gameState.phase === 'playing' && currentPlayer.hand.length === 0
+  const multipleHumans = playerConfigs.filter(p => !p.isAI).length > 1
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
   const movePreview = stagedMoves.length > 0
     ? validateMove(gameState.board, stagedMoves, isFirstMove)
     : null
-  const validCells = gameState.phase === 'playing' && !isAITurn
+  const validCells = gameState.phase === 'playing' && !isAITurn && !handoffPending
     ? getValidPlacementCells(gameState.board, stagedMoves, isFirstMove)
     : new Set<string>()
 
@@ -83,11 +90,11 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
                 : `${currentPlayer.name} scored +${result.scoreEarned}!`
             )
             const positions = new Set(move.placed.map(p => `${p.position.row},${p.position.col}`))
-            setAiRecentMoves(positions)
+            setRecentMoves(positions)
             setScoreFlash({ playerIndex: gameState.currentPlayerIndex, amount: result.scoreEarned })
             if (aiHighlightTimer.current) clearTimeout(aiHighlightTimer.current)
             aiHighlightTimer.current = setTimeout(() => {
-              setAiRecentMoves(new Set())
+              setRecentMoves(new Set())
               setScoreFlash(null)
             }, 1500)
           }
@@ -125,6 +132,39 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.currentPlayerIndex, gameState.phase])
+
+  // ── Pass-the-device handoff ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!multipleHumans || gameState.phase !== 'playing' || gameState.turnNumber === 0) return
+    const player = gameState.players[gameState.currentPlayerIndex]
+    if (player.isAI || player.hand.length === 0) return
+    setHandoffPending(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.currentPlayerIndex, gameState.phase])
+
+  const handleHandoffReady = useCallback(() => {
+    setHandoffPending(false)
+    setMessage('')
+    if (pendingHandoffMoves.current.size > 0) {
+      setRecentMoves(pendingHandoffMoves.current)
+      pendingHandoffMoves.current = new Set()
+      if (aiHighlightTimer.current) clearTimeout(aiHighlightTimer.current)
+      aiHighlightTimer.current = setTimeout(() => setRecentMoves(new Set()), 1500)
+    }
+  }, [])
+
+  // ── Learning mode: compute best possible score for this turn ──────────
+
+  useEffect(() => {
+    if (!(learningMode || challengeMode) || isAITurn || gameState.phase !== 'playing') {
+      setTurnMaxScore(null)
+      return
+    }
+    const best = findBestMove(gameState, 'medium')
+    setTurnMaxScore(best?.score ?? 0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [learningMode, challengeMode, gameState.currentPlayerIndex, gameState.phase])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -171,15 +211,21 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
       setMessage(result.reason)
       return
     }
+    if (multipleHumans) {
+      pendingHandoffMoves.current = new Set(stagedMoves.map(m => `${m.position.row},${m.position.col}`))
+    }
     setGameState(result.state)
     setStagedMoves([])
     setSelectedTile(null)
+    const pct = challengeMode && !learningMode && turnMaxScore !== null && turnMaxScore > 0
+      ? ` · ${Math.min(100, Math.round(result.scoreEarned / turnMaxScore * 100))}% of potential`
+      : ''
     setMessage(
       result.state.phase === 'finished'
         ? 'Game over!'
-        : `+${result.scoreEarned} points for ${currentPlayer.name}!`
+        : `+${result.scoreEarned} points for ${currentPlayer.name}!${pct}`
     )
-  }, [gameState, stagedMoves, currentPlayer])
+  }, [gameState, stagedMoves, currentPlayer, multipleHumans, challengeMode, turnMaxScore])
 
   const handleSkip = useCallback(() => {
     setStagedMoves([])
@@ -238,18 +284,33 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
           {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </Text>
 
-        {confirmingQuit ? (
-          <View style={styles.quitConfirm}>
+        {menuState === 'confirming' ? (
+          <View style={styles.menuRow}>
             <Text style={styles.quitLabel}>Quit?</Text>
             <Pressable onPress={onReturnToMenu} style={[styles.btn, styles.btnDanger]}>
               <Text style={styles.btnText}>Quit</Text>
             </Pressable>
-            <Pressable onPress={() => setConfirmingQuit(false)} style={[styles.btn, styles.btnGhost]}>
+            <Pressable onPress={() => setMenuState('closed')} style={[styles.btn, styles.btnGhost]}>
               <Text style={styles.btnGhostText}>Cancel</Text>
             </Pressable>
           </View>
+        ) : menuState === 'menu' ? (
+          <View style={styles.menuRow}>
+            <Pressable
+              onPress={onToggleChallengeMode}
+              style={[styles.btn, styles.btnGhost, challengeMode && styles.btnGhostActive]}
+            >
+              <Text style={styles.btnGhostText}>Challenge</Text>
+            </Pressable>
+            <Pressable onPress={() => setMenuState('confirming')} style={[styles.btn, styles.btnDanger]}>
+              <Text style={styles.btnText}>Quit</Text>
+            </Pressable>
+            <Pressable onPress={() => setMenuState('closed')} style={[styles.btn, styles.btnGhost]}>
+              <Text style={styles.btnGhostText}>✕</Text>
+            </Pressable>
+          </View>
         ) : (
-          <Pressable onPress={() => setConfirmingQuit(true)} style={[styles.btn, styles.btnGhost]}>
+          <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
             <Text style={styles.btnGhostText}>Menu</Text>
           </Pressable>
         )}
@@ -262,7 +323,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
           stagedMoves={stagedMoves}
           selectedTile={selectedTile}
           validCells={validCells}
-          recentMoves={aiRecentMoves}
+          recentMoves={recentMoves}
           onCellClick={handleCellClick}
           onStagedClick={handleUnstage}
         />
@@ -270,7 +331,18 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
 
       {/* Footer */}
       <View style={styles.footer}>
-        {gameState.phase === 'finished' ? (
+        {handoffPending ? (
+          <View style={styles.handoff}>
+            <View style={styles.handoffInfo}>
+              {message ? <Text style={styles.turnMessage}>{message}</Text> : null}
+              <Text style={styles.handoffName}>{currentPlayer.name}'s turn</Text>
+              <Text style={styles.handoffHint}>Pass the device, then tap Ready</Text>
+            </View>
+            <Pressable onPress={handleHandoffReady} style={[styles.btn, styles.btnPrimary]}>
+              <Text style={styles.btnText}>Ready →</Text>
+            </Pressable>
+          </View>
+        ) : gameState.phase === 'finished' ? (
           <View style={styles.gameOver}>
             <Text style={styles.gameOverTitle}>Game Over</Text>
             <Text style={styles.gameOverWinner}>
@@ -331,12 +403,24 @@ export default function GameScreen({ playerConfigs, onReturnToMenu }: GameScreen
                     </Text>
                   </Pressable>
                   {movePreview && (
-                    <Text style={[
-                      styles.movePreview,
-                      movePreview.valid ? styles.movePreviewValid : styles.movePreviewInvalid,
-                    ]}>
-                      {movePreview.valid ? `+${movePreview.score} pts` : movePreview.reason}
-                    </Text>
+                    <View style={styles.movePreviewContainer}>
+                      <Text style={[
+                        styles.movePreview,
+                        movePreview.valid ? styles.movePreviewValid : styles.movePreviewInvalid,
+                      ]}>
+                        {movePreview.valid ? `+${movePreview.score} pts` : movePreview.reason}
+                      </Text>
+                      {movePreview.valid && learningMode && turnMaxScore !== null && turnMaxScore > 0 && (
+                        <Text style={[
+                          styles.learningPct,
+                          movePreview.score >= turnMaxScore ? styles.learningPctOptimal :
+                          movePreview.score / turnMaxScore >= 0.7 ? styles.learningPctGood :
+                          styles.learningPctLow,
+                        ]}>
+                          {Math.min(100, Math.round(movePreview.score / turnMaxScore * 100))}% of potential
+                        </Text>
+                      )}
+                    </View>
                   )}
                 </View>
               </View>
@@ -422,7 +506,7 @@ const styles = StyleSheet.create({
   tilesRemainingLow: {
     color: colors.gold,
   },
-  quitConfirm: {
+  menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -457,6 +541,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  handoff: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  handoffInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  handoffName: {
+    color: colors.cream,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  handoffHint: {
+    color: colors.creamDark,
+    fontSize: 12,
+  },
   controls: {
     flex: 1,
     flexDirection: 'row',
@@ -468,6 +571,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  movePreviewContainer: {
+    gap: 2,
+  },
   movePreview: {
     fontSize: 13,
     fontWeight: '600',
@@ -477,6 +583,18 @@ const styles = StyleSheet.create({
   },
   movePreviewInvalid: {
     color: '#e07070',
+  },
+  learningPct: {
+    fontSize: 11,
+  },
+  learningPctOptimal: {
+    color: colors.goldLight,
+  },
+  learningPctGood: {
+    color: colors.tealLight,
+  },
+  learningPctLow: {
+    color: colors.creamDark,
   },
   gameOver: {
     alignItems: 'center',
@@ -516,6 +634,10 @@ const styles = StyleSheet.create({
   btnGhost: {
     borderWidth: 1,
     borderColor: colors.navyLight,
+  },
+  btnGhostActive: {
+    borderColor: colors.teal,
+    backgroundColor: 'rgba(44,180,180,0.15)',
   },
   btnDanger: {
     backgroundColor: '#9b2335',
