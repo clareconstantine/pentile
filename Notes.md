@@ -5,9 +5,6 @@
 ## UI / UX
 - Accessibility
   - keyboard nav
-- Setup screen: name input field not obviously editable — add a subtle border/underline on hover/focus
-- Setup screen: make "How to Play?" more visually prominent
-- Setup screen: remove the light/dark mode toggle (it's in the in-game Menu)
 - Dark/light/device theme toggle — add "device" mode (follows OS preference) on both web and mobile
 
 ## Mobile

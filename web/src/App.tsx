@@ -58,8 +58,6 @@ export default function App() {
       ) : (
         <SetupScreen
           onStart={handleStart}
-          isDark={theme === 'dark'}
-          onToggleTheme={toggleTheme}
         />
       )}
     </>

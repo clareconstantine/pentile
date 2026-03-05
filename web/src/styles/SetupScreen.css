@@ -111,6 +111,10 @@
   transition: border-color 0.15s;
 }
 
+.slot-name:hover {
+  border-color: var(--cream-dark);
+}
+
 .slot-name:focus {
   border-color: var(--gold);
 }
@@ -188,18 +192,23 @@
 
 .how-to-play-btn {
   background: none;
-  border: none;
-  color: var(--text-dim);
+  border: 1px solid var(--teal);
+  border-radius: 4px;
+  color: var(--teal-light);
   font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 4px;
-  transition: color 0.15s;
+  padding: 8px 20px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.how-to-play-btn:hover { color: var(--cream); }
+.how-to-play-btn:hover {
+  background: rgba(42, 157, 143, 0.12);
+  border-color: var(--teal-light);
+  color: var(--cream);
+}
 
 .learning-toggle {
   display: flex;
@@ -223,13 +232,6 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
-}
-
-.setup-bottom-row {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  margin-top: 4px;
 }
 
 /* Directions modal */

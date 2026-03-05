@@ -9,8 +9,6 @@ export interface GameOptions {
 
 interface SetupScreenProps {
   onStart: (players: PlayerConfig[], options: GameOptions) => void
-  isDark: boolean
-  onToggleTheme: () => void
 }
 
 type PlayerType = 'human' | 'easy' | 'medium'
@@ -28,7 +26,7 @@ const DEFAULTS: PlayerSlot[] = [
   { name: 'Player 4', type: 'human',  active: false },
 ]
 
-export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScreenProps) {
+export default function SetupScreen({ onStart }: SetupScreenProps) {
   const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
   const [showDirections, setShowDirections] = useState(false)
   const [learningMode, setLearningMode] = useState(false)
@@ -163,14 +161,9 @@ export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScr
           />
           Learning mode
         </label>
-        <div className="setup-bottom-row">
-          <button className="how-to-play-btn" onClick={() => setShowDirections(true)}>
-            How to play?
-          </button>
-          <button className="how-to-play-btn" onClick={onToggleTheme}>
-            {isDark ? 'Light mode' : 'Dark mode'}
-          </button>
-        </div>
+        <button className="how-to-play-btn" onClick={() => setShowDirections(true)}>
+          How to play?
+        </button>
       </div>
     </div>
   )
