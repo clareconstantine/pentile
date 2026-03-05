@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { GameState, Tile, PlacedTile, Position } from '@engine/types'
 import { createGame, takeTurn, skipTurn } from '@engine/gameState'
 import { validatePartialMove, validateMove } from '@engine/validation'
@@ -26,6 +26,9 @@ interface GameScreenProps {
 
 const AI_THINKING_DELAY_MS = 1200
 
+// Persists across game sessions within the app lifecycle (no AsyncStorage needed)
+let endgameModalShown = false
+
 export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
@@ -43,6 +46,8 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
   const [handoffPending, setHandoffPending] = useState(false)
   const [turnMaxScore, setTurnMaxScore] = useState<number | null>(null)
   const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
+  const [hasValidMoves, setHasValidMoves] = useState<boolean | null>(null)
+  const [showEndgameModal, setShowEndgameModal] = useState(false)
 
   const aiThinking = useRef(false)
   const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -55,6 +60,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
   const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
   const isEmptyHandTurn = !isAITurn && gameState.phase === 'playing' && currentPlayer.hand.length === 0
   const multipleHumans = playerConfigs.filter(p => !p.isAI).length > 1
+  const isEndgame = gameState.phase === 'playing' && gameState.tileBag.length === 0
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
@@ -154,17 +160,30 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     }
   }, [])
 
-  // ── Learning mode: compute best possible score for this turn ──────────
+  // ── Valid moves + learning mode: compute best possible score for this turn ──
 
   useEffect(() => {
-    if (!(learningMode || challengeMode) || isAITurn || gameState.phase !== 'playing') {
+    if (isAITurn || isEmptyHandTurn || gameState.phase !== 'playing') {
+      setHasValidMoves(null)
       setTurnMaxScore(null)
       return
     }
     const best = findBestMove(gameState, 'medium')
-    setTurnMaxScore(best?.score ?? 0)
+    setHasValidMoves(best !== null)
+    setTurnMaxScore((learningMode || challengeMode) ? (best?.score ?? 0) : null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learningMode, challengeMode, gameState.currentPlayerIndex, gameState.phase])
+
+  // ── Show endgame modal once (first time bag empties) ──────────────────
+
+  useEffect(() => {
+    if (!isEndgame) return
+    if (!endgameModalShown) {
+      endgameModalShown = true
+      setShowEndgameModal(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEndgame])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -316,6 +335,13 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
         )}
       </View>
 
+      {/* Endgame banner */}
+      {isEndgame && (
+        <View style={styles.endgameBanner}>
+          <Text style={styles.endgameBannerText}>No more tiles to draw — players are finishing their hands</Text>
+        </View>
+      )}
+
       {/* Board */}
       <View style={styles.boardContainer}>
         <Board
@@ -384,11 +410,12 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
                     onPress={handleSkip}
                     disabled={stagedMoves.length > 0}
                     style={[
-                      styles.btn, styles.btnSecondary,
+                      styles.btn,
+                      hasValidMoves === false && stagedMoves.length === 0 ? styles.btnPrimary : styles.btnSecondary,
                       stagedMoves.length > 0 && styles.btnDisabled,
                     ]}
                   >
-                    <Text style={styles.btnGhostText}>Skip</Text>
+                    <Text style={hasValidMoves === false && stagedMoves.length === 0 ? styles.btnText : styles.btnGhostText}>Skip</Text>
                   </Pressable>
                   <Pressable
                     onPress={handleConfirm}
@@ -402,7 +429,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
                       Confirm ({stagedMoves.length})
                     </Text>
                   </Pressable>
-                  {movePreview && (
+                  {movePreview ? (
                     <View style={styles.movePreviewContainer}>
                       <Text style={[
                         styles.movePreview,
@@ -421,13 +448,30 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
                         </Text>
                       )}
                     </View>
-                  )}
+                  ) : hasValidMoves === false ? (
+                    <Text style={styles.noValidMoves}>No valid moves</Text>
+                  ) : null}
                 </View>
               </View>
             )}
           </View>
         )}
       </View>
+
+      {/* Endgame modal */}
+      <Modal visible={showEndgameModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Endgame</Text>
+            <Text style={styles.modalBody}>
+              The bag is empty. Players continue playing from their hands, and when no one has any more moves, tiles remaining in your hand are subtracted from your score.
+            </Text>
+            <Pressable onPress={() => setShowEndgameModal(false)} style={[styles.btn, styles.btnPrimary]}>
+              <Text style={styles.btnText}>Got It</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -616,6 +660,52 @@ const styles = StyleSheet.create({
   gameOverScore: {
     color: colors.creamDark,
     fontSize: 13,
+  },
+  endgameBanner: {
+    backgroundColor: 'rgba(44,180,180,0.08)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(44,180,180,0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    alignItems: 'center',
+  },
+  endgameBannerText: {
+    color: colors.tealLight,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  noValidMoves: {
+    color: colors.creamDark,
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modal: {
+    backgroundColor: colors.navyMid,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    borderRadius: 8,
+    padding: 24,
+    width: '85%',
+    maxWidth: 400,
+    gap: 16,
+  },
+  modalTitle: {
+    color: colors.goldLight,
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  modalBody: {
+    color: colors.cream,
+    fontSize: 13,
+    lineHeight: 20,
   },
   // Buttons
   btn: {

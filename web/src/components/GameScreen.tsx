@@ -44,6 +44,8 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onTo
   const [handoffPending, setHandoffPending] = useState(false)
   const [turnMaxScore, setTurnMaxScore] = useState<number | null>(null)
   const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
+  const [hasValidMoves, setHasValidMoves] = useState<boolean | null>(null)
+  const [showEndgameModal, setShowEndgameModal] = useState(false)
 
   const aiThinking = useRef(false)
   const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -56,6 +58,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onTo
   const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
   const isEmptyHandTurn = !isAITurn && gameState.phase === 'playing' && currentPlayer.hand.length === 0
   const multipleHumans = playerConfigs.filter(p => !p.isAI).length > 1
+  const isEndgame = gameState.phase === 'playing' && gameState.tileBag.length === 0
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
@@ -155,17 +158,31 @@ useEffect(() => {
     }
   }, [])
 
-  // ── Learning mode: compute best possible score for this turn ──────────
+  // ── Valid moves + learning mode: compute best possible score for this turn ──
 
   useEffect(() => {
-    if (!(learningMode || challengeMode) || isAITurn || gameState.phase !== 'playing') {
+    if (isAITurn || isEmptyHandTurn || gameState.phase !== 'playing') {
+      setHasValidMoves(null)
       setTurnMaxScore(null)
       return
     }
     const best = findBestMove(gameState, 'medium')
-    setTurnMaxScore(best?.score ?? 0)
+    setHasValidMoves(best !== null)
+    setTurnMaxScore((learningMode || challengeMode) ? (best?.score ?? 0) : null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learningMode, challengeMode, gameState.currentPlayerIndex, gameState.phase])
+
+  // ── Show endgame modal once (first time bag empties) ──────────────────
+
+  useEffect(() => {
+    if (!isEndgame) return
+    const seen = localStorage.getItem('pentile-endgame-seen')
+    if (!seen) {
+      setShowEndgameModal(true)
+      localStorage.setItem('pentile-endgame-seen', '1')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEndgame])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -297,6 +314,12 @@ useEffect(() => {
         )}
       </header>
 
+      {isEndgame && (
+        <div className="endgame-banner">
+          No more tiles to draw — players are finishing their hands
+        </div>
+      )}
+
       <main className="game-main">
         <Board
           board={gameState.board}
@@ -353,7 +376,7 @@ useEffect(() => {
               />
             </div>
             <div className="actions">
-              {movePreview && (
+              {movePreview ? (
                 <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
                   {movePreview.valid ? (
                     <>
@@ -370,7 +393,9 @@ useEffect(() => {
                     </>
                   ) : movePreview.reason}
                 </span>
-              )}
+              ) : hasValidMoves === false ? (
+                <span className="move-preview move-preview--no-moves">No valid moves</span>
+              ) : null}
               <button
                 className="btn btn-primary"
                 onClick={handleConfirm}
@@ -379,7 +404,7 @@ useEffect(() => {
                 Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
               </button>
               <button
-                className="btn btn-secondary"
+                className={`btn ${hasValidMoves === false && stagedMoves.length === 0 ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={handleSkip}
                 disabled={stagedMoves.length > 0}
               >
@@ -409,6 +434,20 @@ useEffect(() => {
           </div>
         )}
       </footer>
+
+      {showEndgameModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-title">Endgame</div>
+            <div className="modal-body">
+              The bag is empty. Players continue playing from their hands, and when no one has any more moves, tiles remaining in your hand are subtracted from your score.
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => setShowEndgameModal(false)}>Got It</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

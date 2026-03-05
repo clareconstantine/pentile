@@ -5,6 +5,7 @@
   width: 100vw;
   overflow: hidden;
   background: var(--navy);
+  position: relative;
 }
 
 .game-header {
@@ -341,6 +342,63 @@
   font-size: 1.6rem;
   letter-spacing: 0.1em;
   color: var(--gold-light);
+}
+
+.endgame-banner {
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--teal) 10%, var(--navy-mid));
+  border-bottom: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+  padding: 5px 24px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal-light);
+  text-align: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  max-width: 420px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+}
+
+.modal-body {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--cream);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.move-preview--no-moves {
+  color: var(--text-dim);
+  font-style: italic;
 }
 
 .handoff-hint {
