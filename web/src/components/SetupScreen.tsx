@@ -11,7 +11,7 @@ interface SetupScreenProps {
   onStart: (players: PlayerConfig[], options: GameOptions) => void
 }
 
-type PlayerType = 'human' | 'easy' | 'medium'
+type PlayerType = 'human' | 'easy' | 'medium' | 'hard'
 
 interface PlayerSlot {
   name: string
@@ -130,13 +130,13 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
                     maxLength={16}
                   />
                   <div className="slot-type-picker">
-                    {(['human', 'easy', 'medium'] as PlayerType[]).map(type => (
+                    {(['human', 'easy', 'medium', 'hard'] as PlayerType[]).map(type => (
                       <button
                         key={type}
                         className={`type-btn ${slot.type === type ? 'selected' : ''}`}
                         onClick={() => handleTypeChange(i, type)}
                       >
-                        {type === 'human' ? 'Human' : type === 'easy' ? 'CPU Easy' : 'CPU Med'}
+                        {type === 'human' ? 'Human' : type === 'easy' ? 'Chill' : type === 'medium' ? 'Challenge' : 'Expert'}
                       </button>
                     ))}
                   </div>

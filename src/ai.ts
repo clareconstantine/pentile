@@ -1,11 +1,11 @@
-import type { Board, GameState, PlacedTile, Position, Tile } from "./types";
+import type { Board, GameState, PlacedTile, Position, Tile, TileValue } from "./types";
 import { BOARD_ROWS, BOARD_COLS } from "./types";
 import { isBoardEmpty, isEmpty, isInBounds, orthogonalNeighbors } from "./board";
 import { validateMove } from "./validation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type AIDifficulty = "easy" | "medium";
+export type AIDifficulty = "easy" | "medium" | "hard";
 
 export interface AIMove {
   placed: PlacedTile[];
@@ -29,12 +29,17 @@ export function findBestMove(
     return findDecentMove(state.board, player.hand, isFirstMove);
   }
 
-  // medium: find all moves, pick highest scoring
   const allMoves = findAllValidMoves(state.board, player.hand, isFirstMove);
   if (allMoves.length === 0) return null;
-  const maxScore = Math.max(...allMoves.map(m => m.score));
-  const best = allMoves.filter(m => m.score === maxScore);
-  return pickRandom(best);
+
+  if (difficulty === 'medium') {
+    const maxScore = Math.max(...allMoves.map(m => m.score));
+    const best = allMoves.filter(m => m.score === maxScore);
+    return pickRandom(best);
+  }
+
+  // hard: maximize my score while minimizing opportunities left for opponents
+  return findStrategicMove(state.board, allMoves);
 }
 
 // ─── Move Generation ──────────────────────────────────────────────────────────
@@ -56,6 +61,63 @@ function findDecentMove(
   return pickRandom(decent);
 }
 
+
+/**
+ * Hard mode: pick the move that maximizes (my_score - DEFENSIVE_WEIGHT * opponent_opportunity).
+ * opponent_opportunity = the best single-tile score any opponent could achieve after my move,
+ * estimated by trying all tile values 0–9 in every adjacent empty cell.
+ */
+const DEFENSIVE_WEIGHT = 0.5;
+
+function findStrategicMove(board: Board, moves: AIMove[]): AIMove {
+  let bestMoves: AIMove[] = [];
+  let bestHeuristic = -Infinity;
+
+  for (const move of moves) {
+    const simBoard = applyMoveToBoard(board, move.placed);
+    const opponentBest = estimateOpponentOpportunity(simBoard);
+    const heuristic = move.score - DEFENSIVE_WEIGHT * opponentBest;
+
+    if (heuristic > bestHeuristic) {
+      bestHeuristic = heuristic;
+      bestMoves = [move];
+    } else if (heuristic === bestHeuristic) {
+      bestMoves.push(move);
+    }
+  }
+
+  return pickRandom(bestMoves);
+}
+
+function applyMoveToBoard(board: Board, placed: PlacedTile[]): Board {
+  const newBoard = board.map(row => [...row]);
+  for (const { tile, position } of placed) {
+    newBoard[position.row][position.col] = tile;
+  }
+  return newBoard;
+}
+
+/**
+ * Estimate the best score an opponent could achieve with a single tile
+ * placed anywhere adjacent to the current board state. Tries all values 0–9
+ * at each candidate position and returns the maximum valid score found.
+ */
+function estimateOpponentOpportunity(board: Board): number {
+  let maxScore = 0;
+  const candidates = getAdjacentCandidates(board);
+
+  for (const pos of candidates) {
+    for (let v = 0; v <= 9; v++) {
+      const tile: Tile = { id: '_hyp', value: v as TileValue };
+      const result = validateMove(board, [{ tile, position: pos }], false);
+      if (result.valid && result.score > maxScore) {
+        maxScore = result.score;
+      }
+    }
+  }
+
+  return maxScore;
+}
 
 function findAllValidMoves(
   board: Board,

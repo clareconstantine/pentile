@@ -5,7 +5,7 @@
 ## UI / UX
 - Accessibility
   - keyboard nav
-- Dark/light/auto theme toggle — done on web; still needed on mobile
+- Keep CPU last played tiles gold longer/for the whole next move?
 
 ## Mobile
 - Simplify setup screen: human vs CPU only, no pass-and-play, no players 3/4 — just select CPU difficulty
@@ -14,6 +14,7 @@
 - Redesign bottom banner: hand as vertical column on left side; fix message overflow off right edge
 - Fix font inconsistencies across mobile components
 - App icon: 5 is too high, tile is too large — tweak in Canva and re-export
+- Dark/light/auto theme toggle — done on web; still needed on mobile
 
 ## New Features
 - Quick game mode - smaller board and fewer tiles
@@ -27,7 +28,7 @@
 - Add a paywall after a certain number of games?
 
 ## AI
-- **Hard mode** — smarter AI difficulty beyond easy/medium (minimax or Monte Carlo tree search)
+- **Hard mode** — done: greedy + opponent opportunity penalty (DEFENSIVE_WEIGHT = 0.5)
 
 ## User Accounts
 - Be able to log in

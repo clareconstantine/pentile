@@ -280,7 +280,7 @@ useEffect(() => {
                 {p.name}
                 {playerConfigs[i].isAI && (
                   <span className="ai-badge">
-                    {playerConfigs[i].difficulty ?? 'medium'}
+                    {playerConfigs[i].difficulty === 'easy' ? 'Chill' : playerConfigs[i].difficulty === 'hard' ? 'Expert' : 'Challenge'}
                   </span>
                 )}
               </span>
