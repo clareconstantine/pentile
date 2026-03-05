@@ -4,7 +4,6 @@ import {
   MAX_SEGMENT_LENGTH,
   type MoveValidationResult,
   type PlacedTile,
-  type Position,
 } from "./types";
 import { getAffectedSegments, isEmpty, isInBounds, orthogonalNeighbors, placeOnBoard } from "./board";
 
