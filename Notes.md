@@ -5,7 +5,7 @@
 ## UI / UX
 - Accessibility
   - keyboard nav
-- Dark/light/device theme toggle — add "device" mode (follows OS preference) on both web and mobile
+- Dark/light/auto theme toggle — done on web; still needed on mobile
 
 ## Mobile
 - Simplify setup screen: human vs CPU only, no pass-and-play, no players 3/4 — just select CPU difficulty

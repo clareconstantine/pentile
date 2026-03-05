@@ -194,7 +194,7 @@
   background: none;
   border: 1px solid var(--teal);
   border-radius: 4px;
-  color: var(--teal-light);
+  color: var(--cream);
   font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
@@ -219,7 +219,8 @@
   text-transform: uppercase;
   color: var(--text-dim);
   cursor: pointer;
-  margin-top: 4px;
+  margin-top: 12px;
+  margin-bottom: 4px;
   transition: color 0.15s;
 }
 

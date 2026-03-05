@@ -18,8 +18,8 @@ export interface PlayerConfig {
 interface GameScreenProps {
   playerConfigs: PlayerConfig[]
   onReturnToMenu: () => void
-  isDark?: boolean
-  onToggleTheme?: () => void
+  theme?: 'dark' | 'light' | 'auto'
+  onSetTheme?: (theme: 'dark' | 'light' | 'auto') => void
   learningMode?: boolean
   challengeMode?: boolean
   onToggleChallengeMode?: () => void
@@ -27,7 +27,7 @@ interface GameScreenProps {
 
 const AI_THINKING_DELAY_MS = 1200
 
-export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, theme, onSetTheme, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -296,22 +296,7 @@ useEffect(() => {
         <span className={`tiles-remaining ${gameState.tileBag.length <= 10 ? 'tiles-remaining--low' : ''}`}>
           {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </span>
-        {menuState === 'confirming' ? (
-          <div className="quit-confirm">
-            <span className="quit-confirm-label">Quit game?</span>
-            <button className="btn btn-danger" onClick={onReturnToMenu}>Quit</button>
-            <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>Cancel</button>
-          </div>
-        ) : menuState === 'menu' ? (
-          <div className="quit-confirm">
-            <button className="btn btn-ghost" onClick={onToggleTheme}>{isDark ? 'Light' : 'Dark'}</button>
-            <button className={`btn btn-ghost ${challengeMode ? 'btn-ghost--active' : ''}`} onClick={onToggleChallengeMode}>Challenge</button>
-            <button className="btn btn-danger" onClick={() => setMenuState('confirming')}>Quit</button>
-            <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>✕</button>
-          </div>
-        ) : (
-          <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Menu</button>
-        )}
+        <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Menu</button>
       </header>
 
       {isEndgame && (
@@ -440,6 +425,59 @@ useEffect(() => {
           </div>
         )}
       </footer>
+
+      {menuState !== 'closed' && (
+        <div className="modal-overlay" onClick={() => setMenuState('closed')}>
+          <div className="menu-modal" onClick={e => e.stopPropagation()}>
+            <div className="menu-modal-header">
+              <span className="menu-modal-title">MENU</span>
+              <button className="menu-modal-close" onClick={() => setMenuState('closed')}>✕</button>
+            </div>
+            {menuState === 'confirming' ? (
+              <div className="menu-section">
+                <p className="menu-confirm-text">Quit the current game?</p>
+                <div className="menu-actions">
+                  <button className="btn btn-danger" onClick={onReturnToMenu}>Quit</button>
+                  <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="menu-section">
+                  <span className="menu-section-label">Theme</span>
+                  <div className="menu-theme-picker">
+                    {(['dark', 'light', 'auto'] as const).map(t => (
+                      <button
+                        key={t}
+                        className={`menu-theme-btn ${theme === t ? 'menu-theme-btn--selected' : ''}`}
+                        onClick={() => onSetTheme?.(t)}
+                      >
+                        {t === 'auto' ? 'Auto' : t === 'dark' ? 'Dark' : 'Light'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="menu-section">
+                  <label className="menu-toggle-row">
+                    <input
+                      type="checkbox"
+                      checked={challengeMode ?? false}
+                      onChange={onToggleChallengeMode}
+                      className="menu-checkbox"
+                    />
+                    Show % of potential after each turn
+                  </label>
+                </div>
+                <div className="menu-section">
+                  <button className="btn btn-danger menu-quit-btn" onClick={() => setMenuState('confirming')}>
+                    Quit Game
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {showEndgameModal && (
         <div className="modal-overlay">
