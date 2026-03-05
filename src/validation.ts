@@ -6,7 +6,7 @@ import {
   type PlacedTile,
   type Position,
 } from "./types";
-import { getAffectedSegments, isEmpty, isInBounds, placeOnBoard } from "./board";
+import { getAffectedSegments, isEmpty, isInBounds, orthogonalNeighbors, placeOnBoard } from "./board";
 
 export function validateMove(
   board: Board,
@@ -60,7 +60,7 @@ export function validateMove(
 
   if (!isFirstMove) {
     const touches = placed.some(({ position: pos }) =>
-      neighbors(pos).some((n) => isInBounds(n) && !isEmpty(board, n))
+      orthogonalNeighbors(pos).some((n) => isInBounds(n) && !isEmpty(board, n))
     );
     if (!touches) {
       return { valid: false, reason: "At least one tile must touch a previously played tile." };
@@ -179,7 +179,7 @@ function checkNoGaps(
     const row = placed[0].position.row;
     const cols = placed.map((p) => p.position.col).sort((a, b) => a - b);
     for (let c = cols[0]; c <= cols[cols.length - 1]; c++) {
-      if (!isEmpty(board, { row, col: c }) === false && !placedPositions.has(`${row},${c}`)) {
+      if (isEmpty(board, { row, col: c }) && !placedPositions.has(`${row},${c}`)) {
         return { ok: false, reason: "Tiles in a single turn cannot have empty gaps between them." };
       }
     }
@@ -187,7 +187,7 @@ function checkNoGaps(
     const col = placed[0].position.col;
     const rows = placed.map((p) => p.position.row).sort((a, b) => a - b);
     for (let r = rows[0]; r <= rows[rows.length - 1]; r++) {
-      if (!isEmpty(board, { row: r, col }) === false && !placedPositions.has(`${r},${col}`)) {
+      if (isEmpty(board, { row: r, col }) && !placedPositions.has(`${r},${col}`)) {
         return { ok: false, reason: "Tiles in a single turn cannot have empty gaps between them." };
       }
     }
@@ -196,11 +196,3 @@ function checkNoGaps(
   return { ok: true };
 }
 
-function neighbors(pos: Position): Position[] {
-  return [
-    { row: pos.row - 1, col: pos.col },
-    { row: pos.row + 1, col: pos.col },
-    { row: pos.row, col: pos.col - 1 },
-    { row: pos.row, col: pos.col + 1 },
-  ];
-}

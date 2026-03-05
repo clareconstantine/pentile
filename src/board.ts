@@ -35,6 +35,19 @@ export function isEmpty(board: Board, pos: Position): boolean {
   return getCell(board, pos) === null;
 }
 
+export function isBoardEmpty(board: Board): boolean {
+  return board.every((row) => row.every((cell) => cell === null));
+}
+
+export function orthogonalNeighbors(pos: Position): Position[] {
+  return [
+    { row: pos.row - 1, col: pos.col },
+    { row: pos.row + 1, col: pos.col },
+    { row: pos.row, col: pos.col - 1 },
+    { row: pos.row, col: pos.col + 1 },
+  ];
+}
+
 export function placeOnBoard(board: Board, pos: Position, tile: Tile): Board {
   const next = board.map((row) => [...row]);
   next[pos.row][pos.col] = tile;

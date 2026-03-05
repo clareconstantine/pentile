@@ -1,6 +1,6 @@
 import type { Board, GameState, PlacedTile, Position, Tile } from "./types";
 import { BOARD_ROWS, BOARD_COLS } from "./types";
-import { isEmpty, isInBounds } from "./board";
+import { isBoardEmpty, isEmpty, isInBounds, orthogonalNeighbors } from "./board";
 import { validateMove } from "./validation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ export function findBestMove(
   difficulty: AIDifficulty
 ): AIMove | null {
   const player = state.players[state.currentPlayerIndex];
-  const isFirstMove = state.board.every((row) => row.every((cell) => cell === null));
+  const isFirstMove = isBoardEmpty(state.board);
 
   if (difficulty === 'easy') {
     return findDecentMove(state.board, player.hand, isFirstMove);
@@ -167,6 +167,11 @@ function getCandidateLines(
  * Find all valid multi-tile moves (2–5 tiles) along a single line,
  * using tiles from the given hand.
  */
+const linePos = (line: Line, i: number): Position =>
+  line.direction === "horizontal"
+    ? { row: line.index, col: i }
+    : { row: i, col: line.index };
+
 function findLineMovesForHand(
   board: Board,
   hand: Tile[],
@@ -183,19 +188,12 @@ function findLineMovesForHand(
 
   const occupiedIndices = new Set<number>();
   for (let i = 0; i < length; i++) {
-    const pos: Position =
-      line.direction === "horizontal"
-        ? { row: line.index, col: i }
-        : { row: i, col: line.index };
+    const pos = linePos(line, i);
     if (isInBounds(pos) && !isEmpty(board, pos)) occupiedIndices.add(i);
   }
 
   for (let i = 0; i < length; i++) {
-    const pos: Position =
-      line.direction === "horizontal"
-        ? { row: line.index, col: i }
-        : { row: i, col: line.index };
-
+    const pos = linePos(line, i);
     if (!isInBounds(pos) || !isEmpty(board, pos)) continue;
 
     const nearOccupied = isFirstMove ||
@@ -247,15 +245,6 @@ function permutations<T>(arr: T[]): T[][] {
     const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
     return permutations(rest).map((p) => [item, ...p]);
   });
-}
-
-function orthogonalNeighbors(pos: Position): Position[] {
-  return [
-    { row: pos.row - 1, col: pos.col },
-    { row: pos.row + 1, col: pos.col },
-    { row: pos.row, col: pos.col - 1 },
-    { row: pos.row, col: pos.col + 1 },
-  ];
 }
 
 function pickRandom<T>(arr: T[]): T {
