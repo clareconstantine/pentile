@@ -53,7 +53,30 @@
 ## To Test
 - Multiple human player experience, especially with turns and hands and things
 
+## Mobile Development Workflow
+
+### Day-to-day development
+Use Expo Go — run `npx expo start`, scan QR, changes hot-reload instantly. This is the equivalent of `localhost` in web dev. No rebuild needed.
+
+### When you need a new standalone build (`eas build`)
+Only required when changing things baked into the native binary:
+- `app.json` config (icons, splash, permissions, bundle ID, etc.)
+- Adding a native library (one with native code, not pure JS)
+- Upgrading Expo SDK
+
+Run `eas build --profile preview --platform ios`, download the `.ipa`, reinstall on device.
+
+### Shipping updates to users
+- **New build via EAS** — full rebuild, goes through App Store review (1–3 days). Required for native changes.
+- **OTA update via EAS Update** — pushes JS/asset changes instantly, no App Store review. Users get it next time they open the app. Works for everything pure JS.
+
+### Practical note for Pentile
+Everything is pure JS (no custom native modules), so `eas build` is rarely needed. Use Expo Go for development; only build when preparing a release candidate or App Store submission.
+
+---
+
 ## Future project ideas
 - Lighthouse - like the game light up
 - Binairo
 - any of the logic games on the puzzles website
+- ESTHP revival
