@@ -375,9 +375,15 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
               {gameState.players.reduce((a, b) => a.score > b.score ? a : b).name} wins!
             </Text>
             <View style={styles.gameOverScores}>
-              {gameState.players.map(p => (
-                <Text key={p.id} style={styles.gameOverScore}>{p.name}: {p.score}</Text>
-              ))}
+              {gameState.players.map(p => {
+                const penalty = p.hand.reduce((sum, t) => sum + t.value, 0)
+                const rawScore = p.score + penalty
+                return (
+                  <Text key={p.id} style={styles.gameOverScore}>
+                    {p.name}: {penalty > 0 ? `${rawScore} − ${penalty} = ${p.score}` : `${p.score}`}
+                  </Text>
+                )
+              })}
             </View>
             <Pressable onPress={onReturnToMenu} style={[styles.btn, styles.btnPrimary]}>
               <Text style={styles.btnText}>Back to Menu</Text>

@@ -352,9 +352,15 @@ useEffect(() => {
               {gameState.players.reduce((a, b) => a.score > b.score ? a : b).name} wins!
             </div>
             <div className="game-over-scores">
-              {gameState.players.map(p => (
-                <span key={p.id}>{p.name}: {p.score}</span>
-              ))}
+              {gameState.players.map(p => {
+                const penalty = p.hand.reduce((sum, t) => sum + t.value, 0)
+                const rawScore = p.score + penalty
+                return (
+                  <span key={p.id}>
+                    {p.name}: {penalty > 0 ? `${rawScore} − ${penalty} = ${p.score}` : `${p.score}`}
+                  </span>
+                )
+              })}
             </div>
             <div className="game-over-actions">
               <button className="btn btn-primary" onClick={onReturnToMenu}>
