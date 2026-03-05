@@ -9,7 +9,7 @@
 
 ## Mobile
 - Simplify setup screen: human vs CPU only, no pass-and-play, no players 3/4 — just select CPU difficulty
-- Rename AI difficulties to "Easy" and "Hard" across web and mobile (was easy/medium)
+- Update AI difficulty display names on mobile to match web: Chill / Challenge / Expert
 - Fix scorecard active turn border (gold border not visible)
 - Redesign bottom banner: hand as vertical column on left side; fix message overflow off right edge
 - Fix font inconsistencies across mobile components
