@@ -115,7 +115,9 @@ The `@engine/` path alias points to `src/` — configured in both `babel.config.
 - **Medium AI performance** — `findLineMovesForHand` in `ai.ts` limits candidate cells to within 4 positions of an occupied cell, preventing combinatorial explosion in the early game.
 
 ### Web/mobile divergence
-Web and mobile are at parity as of the most recent commits.
+Web and mobile are largely at parity. Planned mobile-specific divergences going forward:
+- Mobile will be human vs CPU only (no pass-and-play, no players 3/4)
+- Mobile bottom banner will be redesigned (vertical hand column on left)
 
 ---
 
@@ -124,8 +126,9 @@ Web and mobile are at parity as of the most recent commits.
 ### EAS / Build config
 - EAS configured: `eas.json` in root, project linked to `@clareconstantine/pentile`
 - iOS bundle identifier: `com.clareconstantine.pentile`
-- Apple Developer Program enrollment in progress (can take up to 48hrs to activate)
-- Once active, test with: `eas build --profile preview --platform ios`
+- Apple Developer Program active
+- Standalone build tested on device via `eas build --profile preview --platform ios` ✓
+- Developer mode enabled on test iPhone
 - Full checklist in `app-store-launch.md`
 
 ### App contact / accounts

@@ -8,6 +8,15 @@
 - Setup screen: name input field not obviously editable — add a subtle border/underline on hover/focus
 - Setup screen: make "How to Play?" more visually prominent
 - Setup screen: remove the light/dark mode toggle (it's in the in-game Menu)
+- Dark/light/device theme toggle — add "device" mode (follows OS preference) on both web and mobile
+
+## Mobile
+- Simplify setup screen: human vs CPU only, no pass-and-play, no players 3/4 — just select CPU difficulty
+- Rename AI difficulties to "Easy" and "Hard" across web and mobile (was easy/medium)
+- Fix scorecard active turn border (gold border not visible)
+- Redesign bottom banner: hand as vertical column on left side; fix message overflow off right edge
+- Fix font inconsistencies across mobile components
+- App icon: 5 is too high, tile is too large — tweak in Canva and re-export
 
 ## New Features
 - Quick game mode - smaller board and fewer tiles
