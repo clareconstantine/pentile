@@ -46,7 +46,7 @@ pentile/
 │   ├── board.ts            # Board ops, segment extraction, getValidPlacementCells()
 │   ├── validation.ts       # validateMove(), validatePartialMove()
 │   ├── gameState.ts        # createGame(), takeTurn(), skipTurn(), getWinner()
-│   └── ai.ts               # findBestMove() — easy + medium difficulty
+│   └── ai.ts               # findBestMove() — Chill / Challenge / Expert difficulty
 │
 ├── web/src/                # React web app (Vite + TypeScript)
 │   ├── App.tsx             # Routes between 'setup' and 'game' screens
@@ -54,7 +54,7 @@ pentile/
 │   ├── index.css           # Global design tokens (CSS vars) + fonts
 │   ├── App.css             # Vite boilerplate — safe to delete
 │   ├── components/
-│   │   ├── SetupScreen.tsx # Player config (name, human/easy/medium)
+│   │   ├── SetupScreen.tsx # Player config (name, human/Chill/Challenge/Expert)
 │   │   ├── GameScreen.tsx  # Main game loop, AI turn handler, staged moves
 │   │   ├── Board.tsx       # 13×17 grid, renders placed + staged tiles
 │   │   ├── Hand.tsx        # Current player's 5-tile hand
@@ -89,7 +89,7 @@ pentile/
 ---
 
 ## Current State
-The web app is **fully working**: setup screen, game loop, human turns, AI turns (easy + medium), staged move preview, confirm/skip, scoring, end-of-game detection, win screen. Tests exist for the engine (`validation.test.ts`, `gameState.test.ts`, `ai.test.ts`).
+The web app is **fully working**: setup screen, game loop, human turns, AI turns (Chill / Challenge / Expert), staged move preview, confirm/skip, scoring, end-of-game detection, win screen. Tests exist for the engine (`validation.test.ts`, `gameState.test.ts`, `ai.test.ts`).
 
 The **Expo mobile app is also working** and tested on a real device via Expo Go (SDK 54). All 5 components are ported. Safe area insets handled via `react-native-safe-area-context`.
 
@@ -98,24 +98,31 @@ The `@engine/` path alias points to `src/` — configured in both `babel.config.
 ### Key implementation details:
 - **AI turn handler** uses a `useRef` flag (`aiThinking`) instead of `useState` to avoid re-render loops. Effect depends on `[isAITurn, gameState.currentPlayerIndex]` — the `currentPlayerIndex` dependency is critical for multi-AI games where `isAITurn` never becomes false. Delay is `AI_THINKING_DELAY_MS = 1200`.
 - **Recent moves highlight** — `recentMoves: Set<string>` (renamed from `aiRecentMoves`) highlights last-played tiles gold. For AI moves: cleared after 1500ms via `aiHighlightTimer`. For human moves in multi-human games: set in `handleConfirm`, stored in `pendingHandoffMoves` ref, applied in `handleHandoffReady`, cleared after 1500ms. `scoreFlash` shows "+N" briefly on the score card.
-- **`isFirstMove`** — determined by `board.every(row => row.every(cell => cell === null))` throughout (engine, AI, and both UI layers). NOT `turnNumber === 0` — turns can be skipped on an empty board.
+- **`isFirstMove`** — determined by `isBoardEmpty(board)` (exported from `board.ts`). NOT `turnNumber === 0` — turns can be skipped on an empty board.
 - **Move preview** — `validateMove` is called live in `GameScreen` on every staged move change. Score shown next to Confirm button; Confirm is disabled until move is fully valid.
-- **Valid placement highlighting** — `getValidPlacementCells()` in `board.ts` returns a `Set<string>` of `"row,col"` keys. Accounts for: adjacency to existing/staged tiles, 6-tile overflow prevention, committed direction (once 2+ tiles staged), first-move center-only rule. Passed to `Board` as `validCells` prop. Empty during handoff and AI turns.
+- **Valid placement highlighting** — `getValidPlacementCells()` in `board.ts` returns a `Set<string>` of `"row,col"` keys. Accounts for: adjacency to existing/staged tiles, 6-tile overflow prevention, committed direction (once 2+ tiles staged), same-row-or-column + no-gap constraint (1 tile staged), first-move center-only rule. Uses `hasGapInRow`/`hasGapInCol` inner helpers (also used for the committed-direction gap checks). Passed to `Board` as `validCells` prop. Empty during handoff and AI turns.
 - **Tiles remaining** — shown in header as "X tiles in bag" / "Bag empty" (correct pluralisation). Turns gold when ≤ 10 tiles left.
 - **Empty hand auto-skip** — `isEmptyHandTurn` flag; useEffect auto-calls `skipTurn` after 1200ms with animated dots indicator. Prevents stuck human players when bag is empty but others still have tiles.
-- **Menu** — `menuState: 'closed' | 'menu' | 'confirming'` replaces old `confirmingQuit` bool. Menu shows Light/Dark toggle, Challenge mode toggle, and Quit (which leads to confirm step).
-- **Theme** — `isDark` + `onToggleTheme` passed from `App` to `GameScreen` and `SetupScreen`. Persisted in `localStorage` as `pentile-theme`.
+- **Menu** — `menuState: 'closed' | 'menu' | 'confirming'`. Clicking Menu opens a modal overlay (backdrop click to close). Modal contains: theme picker (Dark/Light/Auto), "Show % of potential after each turn" toggle, and Quit (which shows a confirm step within the modal).
+- **Theme** — `theme: 'dark' | 'light' | 'auto'` + `onSetTheme` passed from `App` to `GameScreen` only (SetupScreen no longer receives theme props). `'auto'` follows OS preference via `matchMedia` with a live change listener. Persisted in `localStorage` as `pentile-theme`. Default for new users is `'auto'`.
 - **Pass-the-device handoff** — `multipleHumans` flag; `handoffPending` state set by useEffect when `turnNumber > 0` and it's a human's turn. Shows handoff footer (board visible, hand hidden) until incoming player taps Ready. `handleHandoffReady` applies `pendingHandoffMoves` to `recentMoves` then clears after 1500ms.
 - **Auto-rename on type change** — `handleTypeChange` in `SetupScreen` auto-renames "CPU"→"Player N" (and back) when switching player type, only if name is still the default.
 - **Drag and drop** (web only) — `Tile` accepts `onDragStart`/`onDragEnd`; `Hand` passes `onTileDragStart`/`onTileDragEnd`; `Board` has `onCellDrop` + `dragOverKey` state for hover highlight. `GameScreen` sets `selectedTile` on drag start; `onCellDrop={handleCellClick}` reuses placement logic.
-- **Easy AI** — now uses `findDecentMove`: finds all valid moves, filters to those scoring ≥ half the max, picks randomly. Better than random but not optimal. `findFirstValidMove` removed.
+- **AI difficulties** — internal values are `'easy' | 'medium' | 'hard'`; displayed to users as **Chill / Challenge / Expert**.
+  - *Chill* (`findDecentMove`): finds all valid moves, filters to those scoring ≥ half the max, picks randomly.
+  - *Challenge*: finds all valid moves, picks the highest scoring one (ties broken randomly).
+  - *Expert* (`findStrategicMove`): scores each move as `my_score − DEFENSIVE_WEIGHT * opponent_opportunity`, where `opponent_opportunity` = best score any opponent could get with a single tile (all values 0–9 tried at every adjacent empty cell) after my move is applied. `DEFENSIVE_WEIGHT = 0.5`. Uses `applyMoveToBoard` + `estimateOpponentOpportunity` helpers.
 - **Learning mode** — toggled on setup screen; stored in `GameOptions` passed via `onStart`. Computes `turnMaxScore` via `findBestMove(gameState, 'medium')` once per turn start. Shows `X% of potential points` badge live in move preview (gold ≥ 100%, teal ≥ 70%, dim < 70%).
-- **Challenge mode** — toggled in in-game Menu; persisted in `localStorage` as `pentile-challenge`. After confirming a move, appends `· X% of potential` to the score message. Suppressed when learning mode is also on.
+- **Challenge mode** (the feature, not the difficulty) — toggled in in-game Menu as "Show % of potential after each turn"; persisted in `localStorage` as `pentile-challenge`. After confirming a move, appends `· X% of potential` to the score message. Suppressed when learning mode is also on.
 - **Directions modal** — `constants/directions.ts` is the single source of truth for rule text, imported by both web and mobile `SetupScreen`. Uses `@constants/` alias (configured in Vite, web tsconfig, root tsconfig, and babel.config.js).
-- **Medium AI performance** — `findLineMovesForHand` in `ai.ts` limits candidate cells to within 4 positions of an occupied cell, preventing combinatorial explosion in the early game.
+- **Challenge AI performance** — `findLineMovesForHand` in `ai.ts` limits candidate cells to within 4 positions of an occupied cell, preventing combinatorial explosion in the early game. Uses a `linePos(line, i)` helper to convert a `Line` + index to a `Position`.
+- **Endgame phase** — `isEndgame = phase === 'playing' && tileBag.length === 0`. When true: a teal banner appears below the header; the first time ever, a one-time modal explains the hand-penalty rule (web: `localStorage['pentile-endgame-seen']`; mobile: module-level `endgameModalShown` flag). End screen shows penalty breakdown: "Alice: 45 − 7 = 38" when a player has tiles remaining.
+- **No valid moves detection** — `hasValidMoves` state computed via `findBestMove(gameState, 'medium')` at the start of every human turn (replaces the learning-mode-only effect). When `false`: "No valid moves" appears in the move preview slot and Skip becomes the primary (gold) button.
 
 ### Web/mobile divergence
-Web and mobile are at parity as of the most recent commits.
+Web and mobile are largely at parity. Planned mobile-specific divergences going forward:
+- Mobile will be human vs CPU only (no pass-and-play, no players 3/4)
+- Mobile bottom banner will be redesigned (vertical hand column on left)
 
 ---
 
@@ -124,8 +131,9 @@ Web and mobile are at parity as of the most recent commits.
 ### EAS / Build config
 - EAS configured: `eas.json` in root, project linked to `@clareconstantine/pentile`
 - iOS bundle identifier: `com.clareconstantine.pentile`
-- Apple Developer Program enrollment in progress (can take up to 48hrs to activate)
-- Once active, test with: `eas build --profile preview --platform ios`
+- Apple Developer Program active
+- Standalone build tested on device via `eas build --profile preview --platform ios` ✓
+- Developer mode enabled on test iPhone
 - Full checklist in `app-store-launch.md`
 
 ### App contact / accounts
@@ -140,5 +148,5 @@ Web and mobile are at parity as of the most recent commits.
 ---
 
 ## To-Do (see notes.md for full list)
-- AI hard mode (minimax or MCTS)
+- Mobile: theming, setup screen simplification, bottom banner redesign
 - Eventually: Rails multiplayer backend

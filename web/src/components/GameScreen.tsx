@@ -18,8 +18,8 @@ export interface PlayerConfig {
 interface GameScreenProps {
   playerConfigs: PlayerConfig[]
   onReturnToMenu: () => void
-  isDark?: boolean
-  onToggleTheme?: () => void
+  theme?: 'dark' | 'light' | 'auto'
+  onSetTheme?: (theme: 'dark' | 'light' | 'auto') => void
   learningMode?: boolean
   challengeMode?: boolean
   onToggleChallengeMode?: () => void
@@ -27,7 +27,7 @@ interface GameScreenProps {
 
 const AI_THINKING_DELAY_MS = 1200
 
-export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onToggleTheme, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, theme, onSetTheme, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -44,6 +44,8 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onTo
   const [handoffPending, setHandoffPending] = useState(false)
   const [turnMaxScore, setTurnMaxScore] = useState<number | null>(null)
   const [scoreFlash, setScoreFlash] = useState<{ playerIndex: number; amount: number } | null>(null)
+  const [hasValidMoves, setHasValidMoves] = useState<boolean | null>(null)
+  const [showEndgameModal, setShowEndgameModal] = useState(false)
 
   const aiThinking = useRef(false)
   const aiHighlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -56,6 +58,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, isDark, onTo
   const isFirstMove = gameState.board.every((row) => row.every((cell) => cell === null))
   const isEmptyHandTurn = !isAITurn && gameState.phase === 'playing' && currentPlayer.hand.length === 0
   const multipleHumans = playerConfigs.filter(p => !p.isAI).length > 1
+  const isEndgame = gameState.phase === 'playing' && gameState.tileBag.length === 0
 
   const stagedIds = new Set(stagedMoves.map(m => m.tile.id))
   const availableHand = currentPlayer.hand.filter(t => !stagedIds.has(t.id))
@@ -155,17 +158,31 @@ useEffect(() => {
     }
   }, [])
 
-  // ── Learning mode: compute best possible score for this turn ──────────
+  // ── Valid moves + learning mode: compute best possible score for this turn ──
 
   useEffect(() => {
-    if (!(learningMode || challengeMode) || isAITurn || gameState.phase !== 'playing') {
+    if (isAITurn || isEmptyHandTurn || gameState.phase !== 'playing') {
+      setHasValidMoves(null)
       setTurnMaxScore(null)
       return
     }
     const best = findBestMove(gameState, 'medium')
-    setTurnMaxScore(best?.score ?? 0)
+    setHasValidMoves(best !== null)
+    setTurnMaxScore((learningMode || challengeMode) ? (best?.score ?? 0) : null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [learningMode, challengeMode, gameState.currentPlayerIndex, gameState.phase])
+
+  // ── Show endgame modal once (first time bag empties) ──────────────────
+
+  useEffect(() => {
+    if (!isEndgame) return
+    const seen = localStorage.getItem('pentile-endgame-seen')
+    if (!seen) {
+      setShowEndgameModal(true)
+      localStorage.setItem('pentile-endgame-seen', '1')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEndgame])
 
   // ── Human turn handlers ────────────────────────────────────────────────
 
@@ -263,7 +280,7 @@ useEffect(() => {
                 {p.name}
                 {playerConfigs[i].isAI && (
                   <span className="ai-badge">
-                    {playerConfigs[i].difficulty ?? 'medium'}
+                    {playerConfigs[i].difficulty === 'easy' ? 'Chill' : playerConfigs[i].difficulty === 'hard' ? 'Expert' : 'Challenge'}
                   </span>
                 )}
               </span>
@@ -279,23 +296,14 @@ useEffect(() => {
         <span className={`tiles-remaining ${gameState.tileBag.length <= 10 ? 'tiles-remaining--low' : ''}`}>
           {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </span>
-        {menuState === 'confirming' ? (
-          <div className="quit-confirm">
-            <span className="quit-confirm-label">Quit game?</span>
-            <button className="btn btn-danger" onClick={onReturnToMenu}>Quit</button>
-            <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>Cancel</button>
-          </div>
-        ) : menuState === 'menu' ? (
-          <div className="quit-confirm">
-            <button className="btn btn-ghost" onClick={onToggleTheme}>{isDark ? 'Light' : 'Dark'}</button>
-            <button className={`btn btn-ghost ${challengeMode ? 'btn-ghost--active' : ''}`} onClick={onToggleChallengeMode}>Challenge</button>
-            <button className="btn btn-danger" onClick={() => setMenuState('confirming')}>Quit</button>
-            <button className="btn btn-ghost" onClick={() => setMenuState('closed')}>✕</button>
-          </div>
-        ) : (
-          <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Menu</button>
-        )}
+        <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Menu</button>
       </header>
+
+      {isEndgame && (
+        <div className="endgame-banner">
+          No more tiles to draw — players are finishing their hands
+        </div>
+      )}
 
       <main className="game-main">
         <Board
@@ -329,9 +337,15 @@ useEffect(() => {
               {gameState.players.reduce((a, b) => a.score > b.score ? a : b).name} wins!
             </div>
             <div className="game-over-scores">
-              {gameState.players.map(p => (
-                <span key={p.id}>{p.name}: {p.score}</span>
-              ))}
+              {gameState.players.map(p => {
+                const penalty = p.hand.reduce((sum, t) => sum + t.value, 0)
+                const rawScore = p.score + penalty
+                return (
+                  <span key={p.id}>
+                    {p.name}: {penalty > 0 ? `${rawScore} − ${penalty} = ${p.score}` : `${p.score}`}
+                  </span>
+                )
+              })}
             </div>
             <div className="game-over-actions">
               <button className="btn btn-primary" onClick={onReturnToMenu}>
@@ -353,7 +367,7 @@ useEffect(() => {
               />
             </div>
             <div className="actions">
-              {movePreview && (
+              {movePreview ? (
                 <span className={`move-preview ${movePreview.valid ? 'move-preview--valid' : 'move-preview--invalid'}`}>
                   {movePreview.valid ? (
                     <>
@@ -370,7 +384,9 @@ useEffect(() => {
                     </>
                   ) : movePreview.reason}
                 </span>
-              )}
+              ) : hasValidMoves === false ? (
+                <span className="move-preview move-preview--no-moves">No valid moves</span>
+              ) : null}
               <button
                 className="btn btn-primary"
                 onClick={handleConfirm}
@@ -379,7 +395,7 @@ useEffect(() => {
                 Confirm ({stagedMoves.length} tile{stagedMoves.length !== 1 ? 's' : ''})
               </button>
               <button
-                className="btn btn-secondary"
+                className={`btn ${hasValidMoves === false && stagedMoves.length === 0 ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={handleSkip}
                 disabled={stagedMoves.length > 0}
               >
@@ -406,9 +422,77 @@ useEffect(() => {
                 </span>
               )}
             </span>
+            {message && <span className="turn-message">{message}</span>}
           </div>
         )}
       </footer>
+
+      {menuState !== 'closed' && (
+        <div className="modal-overlay" onClick={() => setMenuState('closed')}>
+          <div className="menu-modal" onClick={e => e.stopPropagation()}>
+            <div className="menu-modal-header">
+              <span className="menu-modal-title">MENU</span>
+              <button className="menu-modal-close" onClick={() => setMenuState('closed')}>✕</button>
+            </div>
+            {menuState === 'confirming' ? (
+              <div className="menu-section">
+                <p className="menu-confirm-text">Quit the current game?</p>
+                <div className="menu-actions">
+                  <button className="btn btn-danger" onClick={onReturnToMenu}>Quit</button>
+                  <button className="btn btn-ghost" onClick={() => setMenuState('menu')}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="menu-section">
+                  <span className="menu-section-label">Theme</span>
+                  <div className="menu-theme-picker">
+                    {(['dark', 'light', 'auto'] as const).map(t => (
+                      <button
+                        key={t}
+                        className={`menu-theme-btn ${theme === t ? 'menu-theme-btn--selected' : ''}`}
+                        onClick={() => onSetTheme?.(t)}
+                      >
+                        {t === 'auto' ? 'Auto' : t === 'dark' ? 'Dark' : 'Light'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="menu-section">
+                  <label className="menu-toggle-row">
+                    <input
+                      type="checkbox"
+                      checked={challengeMode ?? false}
+                      onChange={onToggleChallengeMode}
+                      className="menu-checkbox"
+                    />
+                    Show % of potential after each turn
+                  </label>
+                </div>
+                <div className="menu-section">
+                  <button className="btn btn-danger menu-quit-btn" onClick={() => setMenuState('confirming')}>
+                    Quit Game
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showEndgameModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-title">Endgame</div>
+            <div className="modal-body">
+              The bag is empty. Players continue playing from their hands, and when no one has any more moves, tiles remaining in your hand are subtracted from your score.
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => setShowEndgameModal(false)}>Got It</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

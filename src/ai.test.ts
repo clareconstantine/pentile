@@ -101,6 +101,32 @@ describe("findBestMove", () => {
       const move = findBestMove(nonFirstState, "easy");
       expect(move).not.toBeNull();
     });
+
+    test("hard mode returns a valid move", () => {
+      const existing = tile(5, "existing");
+      const state = seedState(
+        [tile(5, "t1"), tile(5, "t2"), tile(3, "t3"), tile(2, "t4"), tile(1, "t5")],
+        [{ tile: existing, row: CENTER.row, col: CENTER.col }]
+      );
+      const nonFirstState = { ...state, turnNumber: 1 };
+      const move = findBestMove(nonFirstState, "hard");
+      expect(move).not.toBeNull();
+      expect(move!.placed.length).toBeGreaterThan(0);
+    });
+
+    test("hard mode may choose a lower-scoring move to reduce opponent opportunity", () => {
+      // Set up a board where the greedy move creates a large opportunity
+      // for the opponent. Hard mode should at least not crash and should
+      // return a valid move regardless of whether it matches medium's pick.
+      const existing = tile(5, "existing");
+      const state = seedState(
+        [tile(5, "t1"), tile(5, "t2"), tile(5, "t3"), tile(0, "t4"), tile(0, "t5")],
+        [{ tile: existing, row: CENTER.row, col: CENTER.col }]
+      );
+      const nonFirstState = { ...state, turnNumber: 1 };
+      const hardMove = findBestMove(nonFirstState, "hard");
+      expect(hardMove === null || hardMove.placed.length > 0).toBe(true);
+    });
   });
 
   describe("move validity", () => {

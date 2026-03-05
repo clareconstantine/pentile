@@ -1,11 +1,11 @@
-import type { Board, GameState, PlacedTile, Position, Tile } from "./types";
-import { BOARD_ROWS, BOARD_COLS } from "./types";
-import { isEmpty, isInBounds } from "./board";
+import type { Board, GameState, PlacedTile, Position, Tile, TileValue } from "./types";
+import { BOARD_ROWS, BOARD_COLS, CENTER } from "./types";
+import { isBoardEmpty, isEmpty, isInBounds, orthogonalNeighbors } from "./board";
 import { validateMove } from "./validation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type AIDifficulty = "easy" | "medium";
+export type AIDifficulty = "easy" | "medium" | "hard";
 
 export interface AIMove {
   placed: PlacedTile[];
@@ -23,18 +23,23 @@ export function findBestMove(
   difficulty: AIDifficulty
 ): AIMove | null {
   const player = state.players[state.currentPlayerIndex];
-  const isFirstMove = state.board.every((row) => row.every((cell) => cell === null));
+  const isFirstMove = isBoardEmpty(state.board);
 
   if (difficulty === 'easy') {
     return findDecentMove(state.board, player.hand, isFirstMove);
   }
 
-  // medium: find all moves, pick highest scoring
   const allMoves = findAllValidMoves(state.board, player.hand, isFirstMove);
   if (allMoves.length === 0) return null;
-  const maxScore = Math.max(...allMoves.map(m => m.score));
-  const best = allMoves.filter(m => m.score === maxScore);
-  return pickRandom(best);
+
+  if (difficulty === 'medium') {
+    const maxScore = Math.max(...allMoves.map(m => m.score));
+    const best = allMoves.filter(m => m.score === maxScore);
+    return pickRandom(best);
+  }
+
+  // hard: maximize my score while minimizing opportunities left for opponents
+  return findStrategicMove(state.board, allMoves);
 }
 
 // ─── Move Generation ──────────────────────────────────────────────────────────
@@ -56,6 +61,63 @@ function findDecentMove(
   return pickRandom(decent);
 }
 
+
+/**
+ * Hard mode: pick the move that maximizes (my_score - DEFENSIVE_WEIGHT * opponent_opportunity).
+ * opponent_opportunity = the best single-tile score any opponent could achieve after my move,
+ * estimated by trying all tile values 0–9 in every adjacent empty cell.
+ */
+const DEFENSIVE_WEIGHT = 0.5;
+
+function findStrategicMove(board: Board, moves: AIMove[]): AIMove {
+  let bestMoves: AIMove[] = [];
+  let bestHeuristic = -Infinity;
+
+  for (const move of moves) {
+    const simBoard = applyMoveToBoard(board, move.placed);
+    const opponentBest = estimateOpponentOpportunity(simBoard);
+    const heuristic = move.score - DEFENSIVE_WEIGHT * opponentBest;
+
+    if (heuristic > bestHeuristic) {
+      bestHeuristic = heuristic;
+      bestMoves = [move];
+    } else if (heuristic === bestHeuristic) {
+      bestMoves.push(move);
+    }
+  }
+
+  return pickRandom(bestMoves);
+}
+
+function applyMoveToBoard(board: Board, placed: PlacedTile[]): Board {
+  const newBoard = board.map(row => [...row]);
+  for (const { tile, position } of placed) {
+    newBoard[position.row][position.col] = tile;
+  }
+  return newBoard;
+}
+
+/**
+ * Estimate the best score an opponent could achieve with a single tile
+ * placed anywhere adjacent to the current board state. Tries all values 0–9
+ * at each candidate position and returns the maximum valid score found.
+ */
+function estimateOpponentOpportunity(board: Board): number {
+  let maxScore = 0;
+  const candidates = getAdjacentCandidates(board);
+
+  for (const pos of candidates) {
+    for (let v = 0; v <= 9; v++) {
+      const tile: Tile = { id: '_hyp', value: v as TileValue };
+      const result = validateMove(board, [{ tile, position: pos }], false);
+      if (result.valid && result.score > maxScore) {
+        maxScore = result.score;
+      }
+    }
+  }
+
+  return maxScore;
+}
 
 function findAllValidMoves(
   board: Board,
@@ -167,6 +229,11 @@ function getCandidateLines(
  * Find all valid multi-tile moves (2–5 tiles) along a single line,
  * using tiles from the given hand.
  */
+const linePos = (line: Line, i: number): Position =>
+  line.direction === "horizontal"
+    ? { row: line.index, col: i }
+    : { row: i, col: line.index };
+
 function findLineMovesForHand(
   board: Board,
   hand: Tile[],
@@ -183,24 +250,48 @@ function findLineMovesForHand(
 
   const occupiedIndices = new Set<number>();
   for (let i = 0; i < length; i++) {
-    const pos: Position =
-      line.direction === "horizontal"
-        ? { row: line.index, col: i }
-        : { row: i, col: line.index };
+    const pos = linePos(line, i);
     if (isInBounds(pos) && !isEmpty(board, pos)) occupiedIndices.add(i);
   }
 
   for (let i = 0; i < length; i++) {
-    const pos: Position =
-      line.direction === "horizontal"
-        ? { row: line.index, col: i }
-        : { row: i, col: line.index };
-
+    const pos = linePos(line, i);
     if (!isInBounds(pos) || !isEmpty(board, pos)) continue;
 
     const nearOccupied = isFirstMove ||
       [...occupiedIndices].some(occ => Math.abs(i - occ) <= MAX_REACH);
     if (nearOccupied) emptyCells.push(pos);
+  }
+
+  // For the first move, only contiguous runs through the center are valid.
+  // This avoids the C(17,5) combinatorial explosion of arbitrary position subsets.
+  if (isFirstMove) {
+    const centerIdx = line.direction === "horizontal" ? CENTER.col : CENTER.row;
+    for (let count = 2; count <= Math.min(5, hand.length); count++) {
+      const handSubsets = combinations(hand, count);
+      for (let start = centerIdx - count + 1; start <= centerIdx; start++) {
+        const positions: Position[] = [];
+        let valid = true;
+        for (let i = start; i < start + count; i++) {
+          const pos = linePos(line, i);
+          if (!isInBounds(pos)) { valid = false; break; }
+          positions.push(pos);
+        }
+        if (!valid) continue;
+        for (const tiles of handSubsets) {
+          const perms = permutations(tiles);
+          for (const tilePerm of perms) {
+            const placed: PlacedTile[] = positions.map((position, i) => ({
+              tile: tilePerm[i],
+              position,
+            }));
+            const result = validateMove(board, placed, isFirstMove);
+            if (result.valid) moves.push({ placed, score: result.score });
+          }
+        }
+      }
+    }
+    return moves;
   }
 
   // Try all combinations of 2–5 tiles from hand placed into empty cells in this line
@@ -247,15 +338,6 @@ function permutations<T>(arr: T[]): T[][] {
     const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
     return permutations(rest).map((p) => [item, ...p]);
   });
-}
-
-function orthogonalNeighbors(pos: Position): Position[] {
-  return [
-    { row: pos.row - 1, col: pos.col },
-    { row: pos.row + 1, col: pos.col },
-    { row: pos.row, col: pos.col - 1 },
-    { row: pos.row, col: pos.col + 1 },
-  ];
 }
 
 function pickRandom<T>(arr: T[]): T {

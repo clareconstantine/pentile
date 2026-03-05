@@ -35,6 +35,19 @@ export function isEmpty(board: Board, pos: Position): boolean {
   return getCell(board, pos) === null;
 }
 
+export function isBoardEmpty(board: Board): boolean {
+  return board.every((row) => row.every((cell) => cell === null));
+}
+
+export function orthogonalNeighbors(pos: Position): Position[] {
+  return [
+    { row: pos.row - 1, col: pos.col },
+    { row: pos.row + 1, col: pos.col },
+    { row: pos.row, col: pos.col - 1 },
+    { row: pos.row, col: pos.col + 1 },
+  ];
+}
+
 export function placeOnBoard(board: Board, pos: Position, tile: Tile): Board {
   const next = board.map((row) => [...row]);
   next[pos.row][pos.col] = tile;
@@ -130,6 +143,24 @@ export function getValidPlacementCells(
     !isEmpty(board, pos) ||
     stagedMoves.some(m => m.position.row === pos.row && m.position.col === pos.col)
 
+  // Helper: any unoccupied cell strictly between two columns in the same row?
+  const hasGapInRow = (row: number, colA: number, colB: number): boolean => {
+    const [min, max] = [Math.min(colA, colB), Math.max(colA, colB)]
+    for (let col = min + 1; col < max; col++) {
+      if (!isOccupied({ row, col })) return true
+    }
+    return false
+  }
+
+  // Helper: any unoccupied cell strictly between two rows in the same column?
+  const hasGapInCol = (col: number, rowA: number, rowB: number): boolean => {
+    const [min, max] = [Math.min(rowA, rowB), Math.max(rowA, rowB)]
+    for (let row = min + 1; row < max; row++) {
+      if (!isOccupied({ row, col })) return true
+    }
+    return false
+  }
+
   // Helper: would placing at pos create a segment of 6+ in a given direction?
   const wouldExceedMax = (pos: Position): boolean => {
     let hCount = 1
@@ -176,26 +207,26 @@ export function getValidPlacementCells(
       ].some(n => isInBounds(n) && isOccupied(n))
       if (!adjacent) continue
 
-      // If direction is committed, only allow cells in that row/col
+      // With one tile staged, next tile must share its row or column with no gaps
+      if (stagedMoves.length === 1 && committedDirection === 'none') {
+        const staged = stagedMoves[0].position
+        if (r !== staged.row && c !== staged.col) continue
+        if (r === staged.row ? hasGapInRow(r, c, staged.col) : hasGapInCol(c, r, staged.row)) continue
+      }
+
+      // If direction is committed, only allow cells in that row/col with no gaps
       if (committedDirection === 'horizontal') {
         if (r !== stagedMoves[0].position.row) continue
-        // No empty gaps between this cell and the staged cluster
         const stagedCols = stagedMoves.map(m => m.position.col)
-        const allCols = [...stagedCols, c].sort((a, b) => a - b)
-        const minCol = allCols[0]
-        const maxCol = allCols[allCols.length - 1]
-        const hasGap = Array.from({ length: maxCol - minCol + 1 }, (_, i) => minCol + i)
-          .some(col => col !== c && !isOccupied({ row: r, col }))
-        if (hasGap) continue
+        const minCol = Math.min(...stagedCols)
+        const maxCol = Math.max(...stagedCols)
+        if (hasGapInRow(r, c, minCol) || hasGapInRow(r, c, maxCol)) continue
       } else if (committedDirection === 'vertical') {
         if (c !== stagedMoves[0].position.col) continue
         const stagedRows = stagedMoves.map(m => m.position.row)
-        const allRows = [...stagedRows, r].sort((a, b) => a - b)
-        const minRow = allRows[0]
-        const maxRow = allRows[allRows.length - 1]
-        const hasGap = Array.from({ length: maxRow - minRow + 1 }, (_, i) => minRow + i)
-          .some(row => row !== r && !isOccupied({ row, col: c }))
-        if (hasGap) continue
+        const minRow = Math.min(...stagedRows)
+        const maxRow = Math.max(...stagedRows)
+        if (hasGapInCol(c, r, minRow) || hasGapInCol(c, r, maxRow)) continue
       }
 
       valid.add(`${r},${c}`)

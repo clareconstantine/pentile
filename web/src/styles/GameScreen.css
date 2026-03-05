@@ -5,6 +5,7 @@
   width: 100vw;
   overflow: hidden;
   background: var(--navy);
+  position: relative;
 }
 
 .game-header {
@@ -269,22 +270,9 @@
   margin-top: 4px;
 }
 
-.quit-confirm {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.quit-confirm-label {
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
 .btn-danger {
   background: var(--red);
-  color: var(--cream);
+  color: #fff;
 }
 
 .tiles-remaining {
@@ -343,9 +331,187 @@
   color: var(--gold-light);
 }
 
+.endgame-banner {
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--teal) 10%, var(--navy-mid));
+  border-bottom: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+  padding: 5px 24px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal-light);
+  text-align: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  max-width: 420px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+}
+
+.modal-body {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--cream);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.move-preview--no-moves {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 .handoff-hint {
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim);
+}
+
+/* Menu modal */
+
+.menu-modal {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: var(--radius);
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--navy-light);
+}
+
+.menu-modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+}
+
+.menu-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.15s;
+}
+
+.menu-modal-close:hover { color: var(--cream); }
+
+.menu-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--navy-light);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-section:last-child {
+  border-bottom: none;
+}
+
+.menu-section-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.menu-theme-picker {
+  display: flex;
+  gap: 6px;
+}
+
+.menu-theme-btn {
+  flex: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--navy-light);
+  background: var(--navy);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.menu-theme-btn:hover {
+  border-color: var(--cream-dark);
+  color: var(--cream);
+}
+
+.menu-theme-btn--selected {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--navy);
+}
+
+.menu-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--cream);
+  cursor: pointer;
+  user-select: none;
+}
+
+.menu-checkbox {
+  accent-color: var(--teal);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.menu-quit-btn {
+  width: 100%;
+}
+
+.menu-confirm-text {
+  font-size: 0.8rem;
+  color: var(--cream);
+  margin: 0;
+}
+
+.menu-actions {
+  display: flex;
+  gap: 8px;
 }

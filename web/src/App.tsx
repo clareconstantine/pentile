@@ -5,7 +5,7 @@ import GameScreen from './components/GameScreen'
 import type { PlayerConfig } from './components/GameScreen'
 
 type Screen = 'setup' | 'game'
-type Theme = 'dark' | 'light'
+export type Theme = 'dark' | 'light' | 'auto'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('setup')
@@ -16,13 +16,26 @@ export default function App() {
   )
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('pentile-theme')
-    if (saved === 'light' || saved === 'dark') return saved
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+    if (saved === 'light' || saved === 'dark' || saved === 'auto') return saved
+    return 'auto'
   })
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
+    const resolved = theme === 'auto'
+      ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+      : theme
+    document.documentElement.setAttribute('data-theme', resolved)
     localStorage.setItem('pentile-theme', theme)
+  }, [theme])
+
+  useEffect(() => {
+    if (theme !== 'auto') return
+    const mq = window.matchMedia('(prefers-color-scheme: light)')
+    const handler = () => {
+      document.documentElement.setAttribute('data-theme', mq.matches ? 'light' : 'dark')
+    }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   }, [theme])
 
   const handleStart = (configs: PlayerConfig[], options: GameOptions) => {
@@ -34,8 +47,6 @@ export default function App() {
   const handleReturnToMenu = () => {
     setScreen('setup')
   }
-
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   const toggleChallengeMode = () => setChallengeMode(c => {
     localStorage.setItem('pentile-challenge', String(!c))
@@ -49,8 +60,8 @@ export default function App() {
           key={playerConfigs.map(p => p.name).join(',')}
           playerConfigs={playerConfigs}
           onReturnToMenu={handleReturnToMenu}
-          isDark={theme === 'dark'}
-          onToggleTheme={toggleTheme}
+          theme={theme}
+          onSetTheme={setTheme}
           learningMode={gameOptions.learningMode}
           challengeMode={challengeMode}
           onToggleChallengeMode={toggleChallengeMode}
@@ -58,8 +69,6 @@ export default function App() {
       ) : (
         <SetupScreen
           onStart={handleStart}
-          isDark={theme === 'dark'}
-          onToggleTheme={toggleTheme}
         />
       )}
     </>

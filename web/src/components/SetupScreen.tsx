@@ -9,11 +9,9 @@ export interface GameOptions {
 
 interface SetupScreenProps {
   onStart: (players: PlayerConfig[], options: GameOptions) => void
-  isDark: boolean
-  onToggleTheme: () => void
 }
 
-type PlayerType = 'human' | 'easy' | 'medium'
+type PlayerType = 'human' | 'easy' | 'medium' | 'hard'
 
 interface PlayerSlot {
   name: string
@@ -28,7 +26,7 @@ const DEFAULTS: PlayerSlot[] = [
   { name: 'Player 4', type: 'human',  active: false },
 ]
 
-export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScreenProps) {
+export default function SetupScreen({ onStart }: SetupScreenProps) {
   const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
   const [showDirections, setShowDirections] = useState(false)
   const [learningMode, setLearningMode] = useState(false)
@@ -132,13 +130,13 @@ export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScr
                     maxLength={16}
                   />
                   <div className="slot-type-picker">
-                    {(['human', 'easy', 'medium'] as PlayerType[]).map(type => (
+                    {(['human', 'easy', 'medium', 'hard'] as PlayerType[]).map(type => (
                       <button
                         key={type}
                         className={`type-btn ${slot.type === type ? 'selected' : ''}`}
                         onClick={() => handleTypeChange(i, type)}
                       >
-                        {type === 'human' ? 'Human' : type === 'easy' ? 'CPU Easy' : 'CPU Med'}
+                        {type === 'human' ? 'Human' : type === 'easy' ? 'Chill' : type === 'medium' ? 'Challenge' : 'Expert'}
                       </button>
                     ))}
                   </div>
@@ -163,14 +161,9 @@ export default function SetupScreen({ onStart, isDark, onToggleTheme }: SetupScr
           />
           Learning mode
         </label>
-        <div className="setup-bottom-row">
-          <button className="how-to-play-btn" onClick={() => setShowDirections(true)}>
-            How to play?
-          </button>
-          <button className="how-to-play-btn" onClick={onToggleTheme}>
-            {isDark ? 'Light mode' : 'Dark mode'}
-          </button>
-        </div>
+        <button className="how-to-play-btn" onClick={() => setShowDirections(true)}>
+          How to play?
+        </button>
       </div>
     </div>
   )

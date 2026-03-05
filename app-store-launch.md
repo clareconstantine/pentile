@@ -8,8 +8,7 @@
 ### 1. Finish the app
 - [x] UI polish (footer layout, etc.)
 - [x] Mobile feature parity with web
-- [ ] Test as a standalone build (not Expo Go) — `eas build --profile preview --platform ios`, then install .ipa directly
-  - Blocked until Apple Developer Program activates
+- [x] Test as a standalone build (not Expo Go) — `eas build --profile preview --platform ios`, then install .ipa directly
 
 ### 2. App assets
 - [x] App icon — 1024×1024px (`assets/icon.png`)
@@ -27,7 +26,7 @@
 ### 4. Developer accounts
 - [x] EAS — logged in as `clareconstantine`
 - [x] EAS project configured — `@clareconstantine/pentile`
-- [ ] Apple Developer Program — enrollment in progress (up to 48hrs to activate)
+- [x] Apple Developer Program — active
 - [ ] Google Play Developer — $25 one-time (skip for now, iOS first)
 
 ### 5. EAS Build setup
