@@ -242,7 +242,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     setMessage(
       result.state.phase === 'finished'
         ? 'Game over!'
-        : `+${result.scoreEarned} points for ${currentPlayer.name}!${pct}`
+        : `You scored +${result.scoreEarned} points!${pct}`
     )
   }, [gameState, stagedMoves, currentPlayer, multipleHumans, challengeMode, turnMaxScore])
 
@@ -252,7 +252,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     const result = skipTurn(gameState)
     if (result.success) {
       setGameState(result.state)
-      setMessage(`${currentPlayer.name} skipped their turn.`)
+      setMessage('You skipped your turn.')
     }
   }, [gameState, currentPlayer])
 
@@ -372,7 +372,11 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
           <View style={styles.gameOver}>
             <Text style={styles.gameOverTitle}>Game Over</Text>
             <Text style={styles.gameOverWinner}>
-              {gameState.players.reduce((a, b) => a.score > b.score ? a : b).name} wins!
+              {(() => {
+                const winner = gameState.players.reduce((a, b) => a.score > b.score ? a : b)
+                const winnerConfig = playerConfigs[gameState.players.indexOf(winner)]
+                return winnerConfig.isAI ? 'CPU wins!' : 'You win!'
+              })()}
             </Text>
             <View style={styles.gameOverScores}>
               {gameState.players.map(p => {
@@ -394,10 +398,10 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
             <View style={styles.turnInfo}>
               <Text style={styles.turnPlayer}>
                 {isAITurn
-                  ? `${currentPlayer.name} is thinking...`
+                  ? 'CPU is thinking...'
                   : isEmptyHandTurn
-                  ? `${currentPlayer.name} has no tiles — skipping...`
-                  : `${currentPlayer.name}'s turn`}
+                  ? 'You have no tiles — skipping...'
+                  : 'Your turn'}
               </Text>
               {message && (
                 <Text style={styles.turnMessage}>{message}</Text>

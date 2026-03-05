@@ -9,7 +9,9 @@
 
 ## Mobile
 - Simplify setup screen: human vs CPU only, no pass-and-play, no players 3/4 — just select CPU difficulty
+- Port menu modal redesign from web (currently still inline header buttons)
 - Update AI difficulty display names on mobile to match web: Chill / Challenge / Expert
+- Expose Expert difficulty in mobile setup screen
 - Fix scorecard active turn border (gold border not visible)
 - Redesign bottom banner: hand as vertical column on left side; fix message overflow off right edge
 - Fix font inconsistencies across mobile components
