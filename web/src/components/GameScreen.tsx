@@ -422,6 +422,7 @@ useEffect(() => {
                 </span>
               )}
             </span>
+            {message && <span className="turn-message">{message}</span>}
           </div>
         )}
       </footer>

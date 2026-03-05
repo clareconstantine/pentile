@@ -399,7 +399,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
                   ? `${currentPlayer.name} has no tiles — skipping...`
                   : `${currentPlayer.name}'s turn`}
               </Text>
-              {message && !isAITurn && (
+              {message && (
                 <Text style={styles.turnMessage}>{message}</Text>
               )}
             </View>
