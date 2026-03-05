@@ -1,5 +1,5 @@
 import type { Board, GameState, PlacedTile, Position, Tile, TileValue } from "./types";
-import { BOARD_ROWS, BOARD_COLS } from "./types";
+import { BOARD_ROWS, BOARD_COLS, CENTER } from "./types";
 import { isBoardEmpty, isEmpty, isInBounds, orthogonalNeighbors } from "./board";
 import { validateMove } from "./validation";
 
@@ -261,6 +261,37 @@ function findLineMovesForHand(
     const nearOccupied = isFirstMove ||
       [...occupiedIndices].some(occ => Math.abs(i - occ) <= MAX_REACH);
     if (nearOccupied) emptyCells.push(pos);
+  }
+
+  // For the first move, only contiguous runs through the center are valid.
+  // This avoids the C(17,5) combinatorial explosion of arbitrary position subsets.
+  if (isFirstMove) {
+    const centerIdx = line.direction === "horizontal" ? CENTER.col : CENTER.row;
+    for (let count = 2; count <= Math.min(5, hand.length); count++) {
+      const handSubsets = combinations(hand, count);
+      for (let start = centerIdx - count + 1; start <= centerIdx; start++) {
+        const positions: Position[] = [];
+        let valid = true;
+        for (let i = start; i < start + count; i++) {
+          const pos = linePos(line, i);
+          if (!isInBounds(pos)) { valid = false; break; }
+          positions.push(pos);
+        }
+        if (!valid) continue;
+        for (const tiles of handSubsets) {
+          const perms = permutations(tiles);
+          for (const tilePerm of perms) {
+            const placed: PlacedTile[] = positions.map((position, i) => ({
+              tile: tilePerm[i],
+              position,
+            }));
+            const result = validateMove(board, placed, isFirstMove);
+            if (result.valid) moves.push({ placed, score: result.score });
+          }
+        }
+      }
+    }
+    return moves;
   }
 
   // Try all combinations of 2–5 tiles from hand placed into empty cells in this line
