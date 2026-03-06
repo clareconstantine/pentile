@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { GameState, Tile, PlacedTile, Position } from '@engine/types'
 import { createGame, takeTurn, skipTurn } from '@engine/gameState'
@@ -8,7 +8,8 @@ import { findBestMove } from '@engine/ai'
 import type { AIDifficulty } from '@engine/ai'
 import Board from './Board'
 import Hand from './Hand'
-import { colors } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 
 export interface PlayerConfig {
   name: string
@@ -22,6 +23,8 @@ interface GameScreenProps {
   learningMode?: boolean
   challengeMode?: boolean
   onToggleChallengeMode?: () => void
+  theme?: 'dark' | 'light' | 'auto'
+  onSetTheme?: (theme: 'dark' | 'light' | 'auto') => void
 }
 
 const AI_THINKING_DELAY_MS = 1200
@@ -29,7 +32,9 @@ const AI_THINKING_DELAY_MS = 1200
 // Persists across game sessions within the app lifecycle (no AsyncStorage needed)
 let endgameModalShown = false
 
-export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode, challengeMode, onToggleChallengeMode, theme, onSetTheme }: GameScreenProps) {
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -79,6 +84,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     aiThinking.current = true
 
     const timer = setTimeout(() => {
+      // Yield to the event queue first so any pending UI interactions
+      // (e.g. menu tap) can be processed before the heavy computation blocks the thread
+      setTimeout(() => {
       try {
         const difficulty = currentConfig.difficulty ?? 'medium'
         const move = findBestMove(gameState, difficulty)
@@ -110,6 +118,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
       } finally {
         aiThinking.current = false
       }
+      }, 0)
     }, AI_THINKING_DELAY_MS)
 
     return () => {
@@ -242,7 +251,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     setMessage(
       result.state.phase === 'finished'
         ? 'Game over!'
-        : `+${result.scoreEarned} points for ${currentPlayer.name}!${pct}`
+        : `You scored +${result.scoreEarned} points!${pct}`
     )
   }, [gameState, stagedMoves, currentPlayer, multipleHumans, challengeMode, turnMaxScore])
 
@@ -252,7 +261,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     const result = skipTurn(gameState)
     if (result.success) {
       setGameState(result.state)
-      setMessage(`${currentPlayer.name} skipped their turn.`)
+      setMessage('You skipped your turn.')
     }
   }, [gameState, currentPlayer])
 
@@ -303,36 +312,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
           {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </Text>
 
-        {menuState === 'confirming' ? (
-          <View style={styles.menuRow}>
-            <Text style={styles.quitLabel}>Quit?</Text>
-            <Pressable onPress={onReturnToMenu} style={[styles.btn, styles.btnDanger]}>
-              <Text style={styles.btnText}>Quit</Text>
-            </Pressable>
-            <Pressable onPress={() => setMenuState('closed')} style={[styles.btn, styles.btnGhost]}>
-              <Text style={styles.btnGhostText}>Cancel</Text>
-            </Pressable>
-          </View>
-        ) : menuState === 'menu' ? (
-          <View style={styles.menuRow}>
-            <Pressable
-              onPress={onToggleChallengeMode}
-              style={[styles.btn, styles.btnGhost, challengeMode && styles.btnGhostActive]}
-            >
-              <Text style={styles.btnGhostText}>Challenge</Text>
-            </Pressable>
-            <Pressable onPress={() => setMenuState('confirming')} style={[styles.btn, styles.btnDanger]}>
-              <Text style={styles.btnText}>Quit</Text>
-            </Pressable>
-            <Pressable onPress={() => setMenuState('closed')} style={[styles.btn, styles.btnGhost]}>
-              <Text style={styles.btnGhostText}>✕</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
-            <Text style={styles.btnGhostText}>Menu</Text>
-          </Pressable>
-        )}
+        <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
+          <Text style={styles.btnGhostText}>Menu</Text>
+        </Pressable>
       </View>
 
       {/* Endgame banner */}
@@ -372,7 +354,11 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
           <View style={styles.gameOver}>
             <Text style={styles.gameOverTitle}>Game Over</Text>
             <Text style={styles.gameOverWinner}>
-              {gameState.players.reduce((a, b) => a.score > b.score ? a : b).name} wins!
+              {(() => {
+                const winner = gameState.players.reduce((a, b) => a.score > b.score ? a : b)
+                const winnerConfig = playerConfigs[gameState.players.indexOf(winner)]
+                return winnerConfig.isAI ? 'CPU wins!' : 'You win!'
+              })()}
             </Text>
             <View style={styles.gameOverScores}>
               {gameState.players.map(p => {
@@ -394,10 +380,10 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
             <View style={styles.turnInfo}>
               <Text style={styles.turnPlayer}>
                 {isAITurn
-                  ? `${currentPlayer.name} is thinking...`
+                  ? 'CPU is thinking...'
                   : isEmptyHandTurn
-                  ? `${currentPlayer.name} has no tiles — skipping...`
-                  : `${currentPlayer.name}'s turn`}
+                  ? 'You have no tiles — skipping...'
+                  : 'Your turn'}
               </Text>
               {message && (
                 <Text style={styles.turnMessage}>{message}</Text>
@@ -464,6 +450,66 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
         )}
       </View>
 
+      {/* Menu overlay */}
+      <Pressable
+        style={[styles.menuOverlay, menuState === 'closed' && { display: 'none' }]}
+        onPress={() => setMenuState('closed')}
+      >
+        <View style={styles.menuModal}>
+            <View style={styles.menuModalHeader}>
+              <Text style={styles.menuModalTitle}>MENU</Text>
+              <Pressable onPress={() => setMenuState('closed')} style={styles.menuCloseBtn}>
+                <Text style={styles.menuCloseBtnText}>✕</Text>
+              </Pressable>
+            </View>
+            {menuState === 'confirming' ? (
+              <View style={styles.menuSection}>
+                <Text style={styles.menuConfirmText}>Quit the current game?</Text>
+                <View style={styles.menuActions}>
+                  <Pressable onPress={onReturnToMenu} style={[styles.btn, styles.btnDanger]}>
+                    <Text style={styles.btnText}>Quit</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
+                    <Text style={styles.btnGhostText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <>
+                <View style={styles.menuSection}>
+                  <Text style={styles.menuSectionLabel}>Theme</Text>
+                  <View style={styles.themeButtons}>
+                    {(['dark', 'light', 'auto'] as const).map(t => (
+                      <Pressable
+                        key={t}
+                        onPress={() => onSetTheme?.(t)}
+                        style={[styles.themeBtn, theme === t && styles.themeBtnActive]}
+                      >
+                        <Text style={[styles.themeBtnText, theme === t && styles.themeBtnTextActive]}>
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.menuSection}>
+                  <Pressable onPress={onToggleChallengeMode} style={styles.menuToggleRow}>
+                    <View style={[styles.menuCheckbox, challengeMode && styles.menuCheckboxChecked]}>
+                      {challengeMode && <Text style={styles.menuCheckboxTick}>✓</Text>}
+                    </View>
+                    <Text style={styles.menuToggleLabel}>Show % of potential after each turn</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.menuSection}>
+                  <Pressable onPress={() => setMenuState('confirming')} style={[styles.btn, styles.btnDanger, styles.menuQuitBtn]}>
+                    <Text style={styles.btnText}>Quit Game</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+          </View>
+      </Pressable>
+
       {/* Endgame modal */}
       <Modal visible={showEndgameModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -482,7 +528,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.navy,
@@ -514,17 +560,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 4,
     backgroundColor: colors.navyLight,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   scoreCardActive: {
     backgroundColor: 'rgba(201,168,76,0.18)',
     borderWidth: 1,
     borderColor: colors.gold,
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-    transform: [{ scale: 1.08 }],
   },
   playerName: {
     color: colors.creamDark,
@@ -556,14 +598,87 @@ const styles = StyleSheet.create({
   tilesRemainingLow: {
     color: colors.gold,
   },
-  menuRow: {
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(13,27,42,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  menuModal: {
+    backgroundColor: colors.navyMid,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+  },
+  menuModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  menuModalTitle: {
+    color: colors.gold,
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 3,
+  },
+  menuCloseBtn: {
+    padding: 4,
+  },
+  menuCloseBtnText: {
+    color: colors.creamDark,
+    fontSize: 16,
+  },
+  menuSection: {
+    marginBottom: 16,
+  },
+  menuToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
   },
-  quitLabel: {
+  menuCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuCheckboxChecked: {
+    backgroundColor: colors.teal,
+    borderColor: colors.teal,
+  },
+  menuCheckboxTick: {
     color: colors.cream,
     fontSize: 13,
+    fontWeight: 'bold',
+  },
+  menuToggleLabel: {
+    color: colors.cream,
+    fontSize: 14,
+    flex: 1,
+  },
+  menuConfirmText: {
+    color: colors.cream,
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  menuActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  menuQuitBtn: {
+    alignSelf: 'flex-start',
   },
   boardContainer: {
     flex: 1,
@@ -750,4 +865,35 @@ const styles = StyleSheet.create({
     color: colors.cream,
     fontSize: 13,
   },
-})
+  themeButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  themeBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    alignItems: 'center',
+  },
+  themeBtnActive: {
+    backgroundColor: colors.teal,
+    borderColor: colors.teal,
+  },
+  themeBtnText: {
+    color: colors.creamDark,
+    fontSize: 13,
+  },
+  themeBtnTextActive: {
+    color: colors.cream,
+    fontWeight: '600',
+  },
+  menuSectionLabel: {
+    color: colors.creamDark,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+}) }

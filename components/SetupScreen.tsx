@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { useState, useMemo } from 'react'
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { PlayerConfig } from './GameScreen'
 import type { AIDifficulty } from '@engine/ai'
-import { colors } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 import { DIRECTIONS } from '@constants/directions'
 
 export interface GameOptions {
@@ -13,59 +14,25 @@ interface SetupScreenProps {
   onStart: (players: PlayerConfig[], options: GameOptions) => void
 }
 
-type PlayerType = 'human' | 'easy' | 'medium'
-
-interface PlayerSlot {
-  name: string
-  type: PlayerType
-  active: boolean
-}
-
-const DEFAULTS: PlayerSlot[] = [
-  { name: 'Player 1', type: 'human',  active: true  },
-  { name: 'CPU',      type: 'medium', active: true  },
-  { name: 'Player 3', type: 'human',  active: false },
-  { name: 'Player 4', type: 'human',  active: false },
+const DIFFICULTIES: { value: AIDifficulty; label: string }[] = [
+  { value: 'easy',   label: 'Chill'     },
+  { value: 'medium', label: 'Challenge' },
+  { value: 'hard',   label: 'Expert'    },
 ]
 
-
 export default function SetupScreen({ onStart }: SetupScreenProps) {
-  const [slots, setSlots] = useState<PlayerSlot[]>(DEFAULTS)
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
+
+  const [difficulty, setDifficulty] = useState<AIDifficulty>('medium')
   const [showDirections, setShowDirections] = useState(false)
   const [learningMode, setLearningMode] = useState(false)
 
-  const activePlayers = slots.filter(s => s.active)
-
-  const updateSlot = (index: number, update: Partial<PlayerSlot>) => {
-    setSlots(prev => prev.map((s, i) => i === index ? { ...s, ...update } : s))
-  }
-
-  const handleTypeChange = (index: number, type: PlayerType) => {
-    const slot = slots[index]
-    const updates: Partial<PlayerSlot> = { type }
-    if (type === 'human' && slot.type !== 'human' && slot.name === 'CPU') {
-      updates.name = `Player ${index + 1}`
-    }
-    if (type !== 'human' && slot.type === 'human' && slot.name === `Player ${index + 1}`) {
-      updates.name = 'CPU'
-    }
-    updateSlot(index, updates)
-  }
-
-  const toggleSlot = (index: number) => {
-    const active = slots.filter(s => s.active)
-    if (slots[index].active && active.length <= 2) return
-    updateSlot(index, { active: !slots[index].active })
-  }
-
   const handleStart = () => {
-    const players: PlayerConfig[] = slots
-      .filter(s => s.active)
-      .map(s => ({
-        name: s.name,
-        isAI: s.type !== 'human',
-        difficulty: s.type === 'human' ? undefined : s.type as AIDifficulty,
-      }))
+    const players: PlayerConfig[] = [
+      { name: 'You', isAI: false },
+      { name: 'CPU', isAI: true, difficulty },
+    ]
     onStart(players, { learningMode })
   }
 
@@ -93,57 +60,26 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
         <Text style={styles.title}>PENTILE</Text>
         <Text style={styles.subtitle}>A game of fives</Text>
 
-        <View style={styles.players}>
-          {slots.map((slot, i) => (
-            i >= 2 && !slot.active ? (
-              <Pressable key={i} onPress={() => toggleSlot(i)} style={styles.addPlayerBtn}>
-                <Text style={styles.addPlayerBtnText}>+ Add Player {i + 1}</Text>
+        <View style={styles.form}>
+          <Text style={styles.label}>CPU difficulty</Text>
+          <View style={styles.difficultyPicker}>
+            {DIFFICULTIES.map(({ value, label }) => (
+              <Pressable
+                key={value}
+                onPress={() => setDifficulty(value)}
+                style={[styles.diffBtn, difficulty === value && styles.diffBtnSelected]}
+              >
+                <Text style={[styles.diffBtnText, difficulty === value && styles.diffBtnTextSelected]}>
+                  {label}
+                </Text>
               </Pressable>
-            ) : (
-              <View key={i} style={styles.slot}>
-                <View style={styles.slotHeader}>
-                  <Text style={styles.slotNumber}>P{i + 1}</Text>
-                  {i >= 2 && (
-                    <Pressable onPress={() => toggleSlot(i)} style={styles.slotToggle}>
-                      <Text style={styles.slotToggleText}>−</Text>
-                    </Pressable>
-                  )}
-                </View>
-                <View style={styles.slotBody}>
-                  <TextInput
-                    style={styles.nameInput}
-                    value={slot.name}
-                    onChangeText={text => updateSlot(i, { name: text })}
-                    maxLength={16}
-                    placeholderTextColor={colors.creamDark}
-                  />
-                  <View style={styles.typePicker}>
-                    {(['human', 'easy', 'medium'] as PlayerType[]).map(type => (
-                      <Pressable
-                        key={type}
-                        onPress={() => handleTypeChange(i, type)}
-                        style={[styles.typeBtn, slot.type === type && styles.typeBtnSelected]}
-                      >
-                        <Text style={[styles.typeBtnText, slot.type === type && styles.typeBtnTextSelected]}>
-                          {type === 'human' ? 'Human' : type === 'easy' ? 'CPU Easy' : 'CPU Med'}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              </View>
-            )
-          ))}
+            ))}
+          </View>
         </View>
 
         <Pressable
           onPress={handleStart}
-          disabled={activePlayers.length < 1}
-          style={({ pressed }) => [
-            styles.startBtn,
-            activePlayers.length < 1 && styles.startBtnDisabled,
-            pressed && styles.startBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.startBtn, pressed && styles.startBtnPressed]}
         >
           <Text style={styles.startBtnText}>Start Game</Text>
         </Pressable>
@@ -163,7 +99,7 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.navy,
@@ -192,91 +128,38 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     letterSpacing: 1,
   },
-  players: {
+  form: {
     width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
     marginBottom: 24,
   },
-  slot: {
-    flex: 1,
-    minWidth: 160,
-    backgroundColor: colors.navyLight,
-    borderRadius: 8,
-    padding: 12,
-  },
-  addPlayerBtn: {
-    borderWidth: 1,
-    borderColor: colors.navyLight,
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    width: '100%',
-  },
-  addPlayerBtnText: {
+  label: {
     color: colors.creamDark,
-    fontSize: 12,
-    letterSpacing: 1,
-  },
-  slotHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     marginBottom: 8,
   },
-  slotNumber: {
-    color: colors.gold,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  slotToggle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.navyMid,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slotToggleText: {
-    color: colors.cream,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  slotBody: {
+  difficultyPicker: {
+    flexDirection: 'row',
     gap: 8,
   },
-  nameInput: {
-    backgroundColor: colors.navyMid,
-    color: colors.cream,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    fontSize: 14,
-  },
-  typePicker: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  typeBtn: {
+  diffBtn: {
     flex: 1,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 4,
+    paddingVertical: 10,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: colors.navyMid,
+    borderColor: colors.navyLight,
     alignItems: 'center',
   },
-  typeBtnSelected: {
+  diffBtnSelected: {
     backgroundColor: colors.teal,
     borderColor: colors.teal,
   },
-  typeBtnText: {
+  diffBtnText: {
     color: colors.creamDark,
-    fontSize: 11,
+    fontSize: 13,
   },
-  typeBtnTextSelected: {
+  diffBtnTextSelected: {
     color: colors.cream,
     fontWeight: 'bold',
   },
@@ -305,28 +188,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: colors.navyLight,
+    borderColor: colors.teal,
   },
   learningToggleActive: {
-    borderColor: colors.teal,
     backgroundColor: 'rgba(44,180,180,0.15)',
   },
   learningToggleText: {
-    color: colors.creamDark,
+    color: colors.tealLight,
     fontSize: 13,
     letterSpacing: 0.5,
   },
   learningToggleTextActive: {
-    color: colors.tealLight,
     fontWeight: '600',
   },
   howToPlayBtn: {
     marginTop: 8,
-    padding: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
   },
   howToPlayText: {
     color: colors.creamDark,
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 1,
   },
   // Directions modal
@@ -381,4 +266,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
-})
+}) }

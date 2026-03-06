@@ -1,6 +1,9 @@
+import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Tile } from '@engine/types'
-import { colors, sizes } from '../constants/design'
+import { sizes } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 
 interface TileProps {
   tile: Tile
@@ -9,6 +12,9 @@ interface TileProps {
 }
 
 export default function TileComponent({ tile, state, onPress }: TileProps) {
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
+
   const tileStyle = [
     styles.tile,
     state === 'placed'   && styles.placed,
@@ -33,7 +39,7 @@ export default function TileComponent({ tile, state, onPress }: TileProps) {
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   tile: {
     width: sizes.tile,
     height: sizes.tile,
@@ -74,4 +80,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.navy,
   },
-})
+}) }

@@ -1,8 +1,11 @@
+import { useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import type { Board as BoardType, PlacedTile, Position, Tile } from '@engine/types'
 import { BOARD_ROWS, BOARD_COLS, CENTER } from '@engine/types'
 import TileComponent from './Tile'
-import { colors, sizes } from '../constants/design'
+import { sizes } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 
 interface BoardProps {
   board: BoardType
@@ -23,6 +26,9 @@ export default function Board({
   onCellClick,
   onStagedClick,
 }: BoardProps) {
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
+
   const stagedMap = new Map(
     stagedMoves.map(m => [`${m.position.row},${m.position.col}`, m.tile])
   )
@@ -86,7 +92,7 @@ export default function Board({
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   outerScroll: {
     flex: 1,
   },
@@ -118,4 +124,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     opacity: 0.6,
   },
-})
+}) }

@@ -8,16 +8,15 @@
 - Keep CPU last played tiles gold longer/for the whole next move?
 
 ## Mobile
-- Simplify setup screen: human vs CPU only, no pass-and-play, no players 3/4 — just select CPU difficulty
-- Update AI difficulty display names on mobile to match web: Chill / Challenge / Expert
-- Fix scorecard active turn border (gold border not visible)
 - Redesign bottom banner: hand as vertical column on left side; fix message overflow off right edge
 - Fix font inconsistencies across mobile components
 - App icon: 5 is too high, tile is too large — tweak in Canva and re-export
-- Dark/light/auto theme toggle — done on web; still needed on mobile
 
 ## New Features
 - Quick game mode - smaller board and fewer tiles
+
+## Performance
+- Make `findBestMove` async (chunked with yields) so JS thread doesn't block UI interactions (e.g. menu checkbox) during CPU thinking
 
 ## Infrastructure
 - Do we have enough tests? - maybe some jest tests?
