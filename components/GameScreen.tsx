@@ -303,36 +303,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
           {gameState.tileBag.length === 0 ? 'Bag empty' : `${gameState.tileBag.length} tile${gameState.tileBag.length === 1 ? '' : 's'} in bag`}
         </Text>
 
-        {menuState === 'confirming' ? (
-          <View style={styles.menuRow}>
-            <Text style={styles.quitLabel}>Quit?</Text>
-            <Pressable onPress={onReturnToMenu} style={[styles.btn, styles.btnDanger]}>
-              <Text style={styles.btnText}>Quit</Text>
-            </Pressable>
-            <Pressable onPress={() => setMenuState('closed')} style={[styles.btn, styles.btnGhost]}>
-              <Text style={styles.btnGhostText}>Cancel</Text>
-            </Pressable>
-          </View>
-        ) : menuState === 'menu' ? (
-          <View style={styles.menuRow}>
-            <Pressable
-              onPress={onToggleChallengeMode}
-              style={[styles.btn, styles.btnGhost, challengeMode && styles.btnGhostActive]}
-            >
-              <Text style={styles.btnGhostText}>Challenge</Text>
-            </Pressable>
-            <Pressable onPress={() => setMenuState('confirming')} style={[styles.btn, styles.btnDanger]}>
-              <Text style={styles.btnText}>Quit</Text>
-            </Pressable>
-            <Pressable onPress={() => setMenuState('closed')} style={[styles.btn, styles.btnGhost]}>
-              <Text style={styles.btnGhostText}>✕</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
-            <Text style={styles.btnGhostText}>Menu</Text>
-          </Pressable>
-        )}
+        <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
+          <Text style={styles.btnGhostText}>Menu</Text>
+        </Pressable>
       </View>
 
       {/* Endgame banner */}
@@ -468,6 +441,50 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
         )}
       </View>
 
+      {/* Menu overlay */}
+      <Pressable
+        style={[styles.menuOverlay, menuState === 'closed' && { display: 'none' }]}
+        onPress={() => setMenuState('closed')}
+      >
+        <View style={styles.menuModal}>
+            <View style={styles.menuModalHeader}>
+              <Text style={styles.menuModalTitle}>MENU</Text>
+              <Pressable onPress={() => setMenuState('closed')} style={styles.menuCloseBtn}>
+                <Text style={styles.menuCloseBtnText}>✕</Text>
+              </Pressable>
+            </View>
+            {menuState === 'confirming' ? (
+              <View style={styles.menuSection}>
+                <Text style={styles.menuConfirmText}>Quit the current game?</Text>
+                <View style={styles.menuActions}>
+                  <Pressable onPress={onReturnToMenu} style={[styles.btn, styles.btnDanger]}>
+                    <Text style={styles.btnText}>Quit</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setMenuState('menu')} style={[styles.btn, styles.btnGhost]}>
+                    <Text style={styles.btnGhostText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <>
+                <View style={styles.menuSection}>
+                  <Pressable onPress={onToggleChallengeMode} style={styles.menuToggleRow}>
+                    <View style={[styles.menuCheckbox, challengeMode && styles.menuCheckboxChecked]}>
+                      {challengeMode && <Text style={styles.menuCheckboxTick}>✓</Text>}
+                    </View>
+                    <Text style={styles.menuToggleLabel}>Show % of potential after each turn</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.menuSection}>
+                  <Pressable onPress={() => setMenuState('confirming')} style={[styles.btn, styles.btnDanger, styles.menuQuitBtn]}>
+                    <Text style={styles.btnText}>Quit Game</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+          </View>
+      </Pressable>
+
       {/* Endgame modal */}
       <Modal visible={showEndgameModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -556,14 +573,87 @@ const styles = StyleSheet.create({
   tilesRemainingLow: {
     color: colors.gold,
   },
-  menuRow: {
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(13,27,42,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  menuModal: {
+    backgroundColor: colors.navyMid,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+  },
+  menuModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  menuModalTitle: {
+    color: colors.gold,
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 3,
+  },
+  menuCloseBtn: {
+    padding: 4,
+  },
+  menuCloseBtnText: {
+    color: colors.creamDark,
+    fontSize: 16,
+  },
+  menuSection: {
+    marginBottom: 16,
+  },
+  menuToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
   },
-  quitLabel: {
+  menuCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuCheckboxChecked: {
+    backgroundColor: colors.teal,
+    borderColor: colors.teal,
+  },
+  menuCheckboxTick: {
     color: colors.cream,
     fontSize: 13,
+    fontWeight: 'bold',
+  },
+  menuToggleLabel: {
+    color: colors.cream,
+    fontSize: 14,
+    flex: 1,
+  },
+  menuConfirmText: {
+    color: colors.cream,
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  menuActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  menuQuitBtn: {
+    alignSelf: 'flex-start',
   },
   boardContainer: {
     flex: 1,
