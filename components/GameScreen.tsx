@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { GameState, Tile, PlacedTile, Position } from '@engine/types'
 import { createGame, takeTurn, skipTurn } from '@engine/gameState'
@@ -8,7 +8,8 @@ import { findBestMove } from '@engine/ai'
 import type { AIDifficulty } from '@engine/ai'
 import Board from './Board'
 import Hand from './Hand'
-import { colors } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 
 export interface PlayerConfig {
   name: string
@@ -22,6 +23,8 @@ interface GameScreenProps {
   learningMode?: boolean
   challengeMode?: boolean
   onToggleChallengeMode?: () => void
+  theme?: 'dark' | 'light' | 'auto'
+  onSetTheme?: (theme: 'dark' | 'light' | 'auto') => void
 }
 
 const AI_THINKING_DELAY_MS = 1200
@@ -29,7 +32,9 @@ const AI_THINKING_DELAY_MS = 1200
 // Persists across game sessions within the app lifecycle (no AsyncStorage needed)
 let endgameModalShown = false
 
-export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode, challengeMode, onToggleChallengeMode }: GameScreenProps) {
+export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode, challengeMode, onToggleChallengeMode, theme, onSetTheme }: GameScreenProps) {
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
   const [gameState, setGameState] = useState<GameState>(() =>
     createGame({
       playerNames: playerConfigs.map(p => p.name),
@@ -472,6 +477,22 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
             ) : (
               <>
                 <View style={styles.menuSection}>
+                  <Text style={styles.menuSectionLabel}>Theme</Text>
+                  <View style={styles.themeButtons}>
+                    {(['dark', 'light', 'auto'] as const).map(t => (
+                      <Pressable
+                        key={t}
+                        onPress={() => onSetTheme?.(t)}
+                        style={[styles.themeBtn, theme === t && styles.themeBtnActive]}
+                      >
+                        <Text style={[styles.themeBtnText, theme === t && styles.themeBtnTextActive]}>
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.menuSection}>
                   <Pressable onPress={onToggleChallengeMode} style={styles.menuToggleRow}>
                     <View style={[styles.menuCheckbox, challengeMode && styles.menuCheckboxChecked]}>
                       {challengeMode && <Text style={styles.menuCheckboxTick}>✓</Text>}
@@ -507,7 +528,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.navy,
@@ -844,4 +865,35 @@ const styles = StyleSheet.create({
     color: colors.cream,
     fontSize: 13,
   },
-})
+  themeButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  themeBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.navyLight,
+    alignItems: 'center',
+  },
+  themeBtnActive: {
+    backgroundColor: colors.teal,
+    borderColor: colors.teal,
+  },
+  themeBtnText: {
+    color: colors.creamDark,
+    fontSize: 13,
+  },
+  themeBtnTextActive: {
+    color: colors.cream,
+    fontWeight: '600',
+  },
+  menuSectionLabel: {
+    color: colors.creamDark,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+}) }

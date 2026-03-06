@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { PlayerConfig } from './GameScreen'
 import type { AIDifficulty } from '@engine/ai'
-import { colors } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 import { DIRECTIONS } from '@constants/directions'
 
 export interface GameOptions {
@@ -20,6 +21,9 @@ const DIFFICULTIES: { value: AIDifficulty; label: string }[] = [
 ]
 
 export default function SetupScreen({ onStart }: SetupScreenProps) {
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
+
   const [difficulty, setDifficulty] = useState<AIDifficulty>('medium')
   const [showDirections, setShowDirections] = useState(false)
   const [learningMode, setLearningMode] = useState(false)
@@ -95,7 +99,7 @@ export default function SetupScreen({ onStart }: SetupScreenProps) {
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.navy,
@@ -262,4 +266,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
-})
+}) }

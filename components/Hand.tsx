@@ -1,8 +1,11 @@
+import { useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import type { Tile } from '@engine/types'
 import { HAND_SIZE } from '@engine/types'
 import TileComponent from './Tile'
-import { colors, sizes } from '../constants/design'
+import { sizes } from '../constants/design'
+import type { Colors } from '../constants/design'
+import { useColors } from '../constants/ThemeContext'
 
 interface HandProps {
   tiles: Tile[]
@@ -11,6 +14,9 @@ interface HandProps {
 }
 
 export default function Hand({ tiles, selectedTile, onTileSelect }: HandProps) {
+  const colors = useColors()
+  const styles = useMemo(() => makeStyles(colors), [colors])
+
   return (
     <View style={styles.hand}>
       {tiles.map(tile => (
@@ -28,7 +34,7 @@ export default function Hand({ tiles, selectedTile, onTileSelect }: HandProps) {
   )
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: Colors) { return StyleSheet.create({
   hand: {
     flexDirection: 'row',
     gap: 6,
@@ -43,4 +49,4 @@ const styles = StyleSheet.create({
     borderColor: colors.navyLight,
     borderStyle: 'dashed',
   },
-})
+}) }
