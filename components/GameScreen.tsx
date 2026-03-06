@@ -79,6 +79,9 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
     aiThinking.current = true
 
     const timer = setTimeout(() => {
+      // Yield to the event queue first so any pending UI interactions
+      // (e.g. menu tap) can be processed before the heavy computation blocks the thread
+      setTimeout(() => {
       try {
         const difficulty = currentConfig.difficulty ?? 'medium'
         const move = findBestMove(gameState, difficulty)
@@ -110,6 +113,7 @@ export default function GameScreen({ playerConfigs, onReturnToMenu, learningMode
       } finally {
         aiThinking.current = false
       }
+      }, 0)
     }, AI_THINKING_DELAY_MS)
 
     return () => {

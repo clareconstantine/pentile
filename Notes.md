@@ -21,6 +21,9 @@
 ## New Features
 - Quick game mode - smaller board and fewer tiles
 
+## Performance
+- Make `findBestMove` async (chunked with yields) so JS thread doesn't block UI interactions (e.g. menu checkbox) during CPU thinking
+
 ## Infrastructure
 - Do we have enough tests? - maybe some jest tests?
 - Rails multiplayer backend?
